@@ -1,0 +1,64 @@
+amends "package://github.com/jdx/hk/releases/download/v2.11.1/hk@2.11.1#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.11.1/hk@2.11.1#/Builtins.pkl"
+
+// hexlet-check.yml belongs to Hexlet and must stay as it is.
+local hexlet = ".github/workflows/hexlet-check.yml"
+local generated = "**/generated/**"
+
+exclude = hexlet
+
+// Generated code is checked by the "generated" step, not by linters.
+local fast = new Mapping<String, Step> {
+  ["oxlint"] = (Builtins.ox_lint) { exclude = List(hexlet, generated) }
+  ["oxfmt"] = (Builtins.oxfmt) {
+    exclude = List(hexlet, generated, "**/pnpm-lock.yaml", "**/package-lock.json")
+  }
+  ["jactionlint"] = Builtins.jactionlint
+}
+
+local all = (fast) {
+  // Rewrites generated code, so it runs alone: the steps below read its output.
+  ["generated"] {
+    glob = List("spec/**", "**/openapi-ts.config.ts", generated)
+    exclusive = true
+    check = "scripts/check-generated.sh"
+    fix = "mise run generate"
+  }
+  ["typecheck"] {
+    glob = List("**/*.ts", "**/*.tsx", "**/tsconfig*.json", "spec/**", "pnpm-lock.yaml")
+    check = "pnpm -r typecheck"
+  }
+  ["test"] {
+    glob = List("backend/**", "spec/**", "pnpm-lock.yaml")
+    check = "pnpm -r test"
+  }
+  ["build"] {
+    glob = List("frontend/**", "spec/**", "pnpm-lock.yaml")
+    check = "pnpm --dir frontend build"
+  }
+}
+
+hooks {
+  ["pre-commit"] {
+    fix = true
+    stash = "git"
+    steps = fast
+  }
+  ["commit-msg"] {
+    steps {
+      ["commitlint"] {
+        check = "pnpm exec commitlint --edit {{commit_msg_file}}"
+      }
+    }
+  }
+  ["pre-push"] {
+    steps = all
+  }
+  ["check"] {
+    steps = all
+  }
+  ["fix"] {
+    fix = true
+    steps = all
+  }
+}
