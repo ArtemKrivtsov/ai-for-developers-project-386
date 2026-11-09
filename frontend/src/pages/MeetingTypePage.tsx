@@ -3,8 +3,15 @@ import { type ReactNode, useId, useState } from 'react';
 import { Link, useParams } from 'react-router';
 
 import DayGrid from '../DayGrid.tsx';
-import { formatDay, formatDuration, formatSlot, formatWindow } from '../format.ts';
-import type { MeetingType, Slot, SlotDay } from '../generated/index.ts';
+import {
+  formatDay,
+  formatDuration,
+  formatMeetingTime,
+  formatSlot,
+  formatWindow,
+} from '../format.ts';
+import type { Meeting, MeetingType, Slot, SlotDay } from '../generated/index.ts';
+import GuestForm, { type Guest } from '../GuestForm.tsx';
 import { useMeetingType } from '../useMeetingType.ts';
 import { type Slots, useSlots } from '../useSlots.ts';
 
@@ -19,7 +26,10 @@ function MeetingTypePage() {
 function MeetingTypeView({ meetingTypeId }: { meetingTypeId: string }) {
   const meetingType = useMeetingType(meetingTypeId);
   const slots = useSlots(meetingTypeId);
+  // The server may stop knowing the meeting type after the page has loaded it.
+  const [gone, setGone] = useState(false);
 
+  if (gone) return <MeetingTypeNotFound />;
   switch (meetingType.status) {
     case 'loading':
       return <Loader role="status" aria-label="Загрузка" />;
@@ -28,7 +38,13 @@ function MeetingTypeView({ meetingTypeId }: { meetingTypeId: string }) {
     case 'notFound':
       return <MeetingTypeNotFound />;
     case 'loaded':
-      return <Booking meetingType={meetingType.meetingType} slots={slots} />;
+      return (
+        <Booking
+          meetingType={meetingType.meetingType}
+          slots={slots}
+          onNotFound={() => setGone(true)}
+        />
+      );
   }
 }
 
@@ -43,10 +59,18 @@ function MeetingTypeNotFound() {
   );
 }
 
-/** Three columns: the meeting and the choice, the days of the window and the slots of a day. */
-function Booking({ meetingType, slots }: { meetingType: MeetingType; slots: Slots }) {
+type BookingProps = { meetingType: MeetingType; slots: Slots; onNotFound: () => void };
+
+/**
+ * Three columns: the meeting and the choice, the days of the window and the slots of a day.
+ * A chosen slot puts the guest form in place of the slots, and a booked meeting puts
+ * the confirmation in place of the days and the slots.
+ */
+function Booking({ meetingType, slots, onNotFound }: BookingProps) {
   const [chosenDate, setChosenDate] = useState<string | null>(null);
   const [chosenStart, setChosenStart] = useState<string | null>(null);
+  const [guest, setGuest] = useState<Guest>({ name: '', email: '' });
+  const [meeting, setMeeting] = useState<Meeting | null>(null);
 
   const days = slots.status === 'loaded' ? slots.days : [];
   // The chosen day while it has slots, otherwise the first day that has some.
@@ -62,17 +86,21 @@ function Booking({ meetingType, slots }: { meetingType: MeetingType; slots: Slot
         <Grid.Col span={{ base: 12, md: 4 }}>
           <Summary meetingType={meetingType} day={day} slot={slot} />
         </Grid.Col>
-        {slots.status === 'loading' && (
+        {meeting && (
           <Grid.Col span={{ base: 12, md: 8 }}>
-            <Loader role="status" aria-label="Загрузка" />
+            <Confirmation meeting={meeting} />
           </Grid.Col>
         )}
-        {slots.status === 'failed' && (
+        {!meeting && slots.status !== 'loaded' && (
           <Grid.Col span={{ base: 12, md: 8 }}>
-            <Text c="red">Не удалось загрузить свободное время. Обновите страницу.</Text>
+            {slots.status === 'loading' ? (
+              <Loader role="status" aria-label="Загрузка" />
+            ) : (
+              <Text c="red">Не удалось загрузить свободное время. Обновите страницу.</Text>
+            )}
           </Grid.Col>
         )}
-        {slots.status === 'loaded' && (
+        {!meeting && slots.status === 'loaded' && (
           <>
             <Grid.Col span={{ base: 12, md: 4 }}>
               <DayColumn
@@ -85,15 +113,28 @@ function Booking({ meetingType, slots }: { meetingType: MeetingType; slots: Slot
               />
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 4 }}>
-              {day && (
-                <TimeColumn
-                  day={day}
-                  chosen={slot}
-                  onChoose={({ start }) => {
-                    setChosenDate(day.date);
-                    setChosenStart(start);
-                  }}
-                />
+              {slot ? (
+                <Column title="Ваши данные">
+                  <GuestForm
+                    meetingTypeId={meetingType.id}
+                    start={slot.start}
+                    guest={guest}
+                    onGuestChange={setGuest}
+                    onBooked={setMeeting}
+                    onNotFound={onNotFound}
+                    onOtherTime={() => setChosenStart(null)}
+                  />
+                </Column>
+              ) : (
+                day && (
+                  <TimeColumn
+                    day={day}
+                    onChoose={({ start }) => {
+                      setChosenDate(day.date);
+                      setChosenStart(start);
+                    }}
+                  />
+                )
               )}
             </Grid.Col>
           </>
@@ -155,10 +196,10 @@ function DayColumn({ days, chosen, onChoose }: DayColumnProps) {
   );
 }
 
-type TimeColumnProps = { day: SlotDay; chosen?: Slot; onChoose: (slot: Slot) => void };
+type TimeColumnProps = { day: SlotDay; onChoose: (slot: Slot) => void };
 
-/** The right column: the slots of the chosen day. */
-function TimeColumn({ day, chosen, onChoose }: TimeColumnProps) {
+/** The right column until a slot is chosen: the slots of the chosen day. */
+function TimeColumn({ day, onChoose }: TimeColumnProps) {
   return (
     <Column title="Время">
       <div>
@@ -169,21 +210,32 @@ function TimeColumn({ day, chosen, onChoose }: TimeColumnProps) {
       </div>
       <ScrollArea.Autosize mah={360} type="auto" offsetScrollbars>
         <Stack gap="xs">
-          {day.slots.map((slot) => {
-            const isChosen = slot.start === chosen?.start;
-            return (
-              <Button
-                key={slot.start}
-                variant={isChosen ? 'filled' : 'default'}
-                aria-pressed={isChosen}
-                onClick={() => onChoose(slot)}
-              >
-                {formatSlot(slot)}
-              </Button>
-            );
-          })}
+          {day.slots.map((slot) => (
+            <Button key={slot.start} variant="default" onClick={() => onChoose(slot)}>
+              {formatSlot(slot)}
+            </Button>
+          ))}
         </Stack>
       </ScrollArea.Autosize>
+    </Column>
+  );
+}
+
+/** Takes the place of the days and the slots once the guest has booked a meeting. */
+function Confirmation({ meeting }: { meeting: Meeting }) {
+  return (
+    <Column title="Вы записаны">
+      <Text fw={500}>{meeting.meetingType.name}</Text>
+      <div>
+        <Text>{formatMeetingTime(meeting)}</Text>
+        <Text size="xs" c="dimmed">
+          {moscowTimeNote}
+        </Text>
+      </div>
+      <Text>{`${meeting.guestName}, ${meeting.guestEmail}`}</Text>
+      <Anchor component={Link} to="/book">
+        Записаться ещё
+      </Anchor>
     </Column>
   );
 }
