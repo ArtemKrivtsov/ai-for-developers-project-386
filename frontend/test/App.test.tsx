@@ -1,21 +1,10 @@
-import { MantineProvider } from '@mantine/core';
-import { render, screen, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
 import { expect, test } from 'vitest';
 
-import App from '../src/App.tsx';
-import { theme } from '../src/theme.ts';
-
-function renderAt(path: string) {
-  render(
-    <MantineProvider theme={theme} env="test">
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-      </MemoryRouter>
-    </MantineProvider>,
-  );
-}
+import { handleListMeetingTypes } from '../src/generated/msw.gen.ts';
+import { server } from './msw.ts';
+import { renderAt } from './render.tsx';
 
 test('home page shows the service name and the «Записаться» button', () => {
   renderAt('/');
@@ -27,6 +16,7 @@ test('home page shows the service name and the «Записаться» button',
 });
 
 test('the «Записаться» button opens the meeting type catalog', async () => {
+  server.use(handleListMeetingTypes({ body: [] }));
   renderAt('/');
 
   await userEvent.click(within(screen.getByRole('main')).getByRole('link', { name: 'Записаться' }));

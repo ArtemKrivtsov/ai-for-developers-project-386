@@ -13,5 +13,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: './test/setup.ts',
+    // A browser far from Moscow: times on the pages must stay Moscow time anyway.
+    env: { TZ: 'America/Los_Angeles' },
   },
 });

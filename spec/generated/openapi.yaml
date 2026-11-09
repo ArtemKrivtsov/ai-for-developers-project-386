@@ -15,6 +15,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Health'
+  /api/meeting-types:
+    get:
+      operationId: listMeetingTypes
+      description: Lists meeting types in creation order.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MeetingType'
 components:
   schemas:
     Health:
@@ -26,3 +40,35 @@ components:
           type: string
           enum:
             - ok
+    MeetingType:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - durationMinutes
+      properties:
+        id:
+          $ref: '#/components/schemas/uuid'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: \S
+        description:
+          type: string
+          maxLength: 500
+          description: An empty string means the meeting type has no description.
+        durationMinutes:
+          type: number
+          enum:
+            - 15
+            - 30
+            - 45
+            - 60
+            - 90
+            - 120
+      description: A kind of meeting the owner offers to guests.
+    uuid:
+      type: string
+      format: uuid

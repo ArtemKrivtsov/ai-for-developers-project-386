@@ -8,6 +8,21 @@ export type Health = {
     status: 'ok';
 };
 
+/**
+ * A kind of meeting the owner offers to guests.
+ */
+export type MeetingType = {
+    id: Uuid;
+    name: string;
+    /**
+     * An empty string means the meeting type has no description.
+     */
+    description: string;
+    durationMinutes: 15 | 30 | 45 | 60 | 90 | 120;
+};
+
+export type Uuid = string;
+
 export type GetHealthData = {
     body?: never;
     path?: never;
@@ -23,3 +38,19 @@ export type GetHealthResponses = {
 };
 
 export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
+
+export type ListMeetingTypesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/meeting-types';
+};
+
+export type ListMeetingTypesResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: Array<MeetingType>;
+};
+
+export type ListMeetingTypesResponse = ListMeetingTypesResponses[keyof ListMeetingTypesResponses];

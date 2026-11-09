@@ -1,11 +1,84 @@
-import { Stack, Text, Title } from '@mantine/core';
+import { Badge, Card, Group, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
+
+import { formatDuration } from '../format.ts';
+import { listMeetingTypes, type MeetingType } from '../generated/index.ts';
+
+type Catalog =
+  | { status: 'loading' }
+  | { status: 'failed' }
+  | { status: 'loaded'; meetingTypes: MeetingType[] };
 
 function CatalogPage() {
+  const [catalog, setCatalog] = useState<Catalog>({ status: 'loading' });
+
+  useEffect(() => {
+    let ignore = false;
+    listMeetingTypes({ throwOnError: true }).then(
+      ({ data }) => {
+        if (!ignore) setCatalog({ status: 'loaded', meetingTypes: data });
+      },
+      () => {
+        if (!ignore) setCatalog({ status: 'failed' });
+      },
+    );
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
   return (
     <Stack gap="md">
       <Title order={1}>Выберите тип встречи</Title>
-      <Text c="dimmed">Скоро здесь можно будет записаться.</Text>
+      <Text c="dimmed">Нажмите на карточку, чтобы выбрать день и время.</Text>
+      <CatalogContent catalog={catalog} />
     </Stack>
+  );
+}
+
+function CatalogContent({ catalog }: { catalog: Catalog }) {
+  switch (catalog.status) {
+    case 'loading':
+      return <Loader role="status" aria-label="Загрузка" />;
+    case 'failed':
+      return <Text c="red">Не удалось загрузить типы встреч. Обновите страницу.</Text>;
+    case 'loaded':
+      if (catalog.meetingTypes.length === 0) {
+        return <Text>Владелец ещё не завёл ни одного типа встречи.</Text>;
+      }
+      return (
+        <SimpleGrid cols={{ base: 1, sm: 2 }}>
+          {catalog.meetingTypes.map((meetingType) => (
+            <MeetingTypeCard key={meetingType.id} meetingType={meetingType} />
+          ))}
+        </SimpleGrid>
+      );
+  }
+}
+
+function MeetingTypeCard({ meetingType }: { meetingType: MeetingType }) {
+  return (
+    <Card
+      component={Link}
+      to={`/book/${meetingType.id}`}
+      withBorder
+      radius="md"
+      padding="lg"
+      td="none"
+    >
+      <Group justify="space-between" align="flex-start" wrap="nowrap">
+        <Title order={2} size="h4">
+          {meetingType.name}
+        </Title>
+        <Badge variant="light">{formatDuration(meetingType.durationMinutes)}</Badge>
+      </Group>
+      {meetingType.description && (
+        <Text c="dimmed" size="sm" mt="xs" lineClamp={3}>
+          {meetingType.description}
+        </Text>
+      )}
+    </Card>
   );
 }
 
