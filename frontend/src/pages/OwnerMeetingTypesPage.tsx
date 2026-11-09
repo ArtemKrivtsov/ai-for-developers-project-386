@@ -1,11 +1,9 @@
-import { Anchor, Badge, Button, Card, Group, Modal, Stack, Text, Title } from '@mantine/core';
+import { Button, Group, Modal, Stack, Text, Title } from '@mantine/core';
 import { useState } from 'react';
-import { Link } from 'react-router';
 
-import { formatDuration } from '../format.ts';
-import type { MeetingType } from '../generated/index.ts';
 import { useMeetingTypes } from '../load.ts';
 import Loaded from '../Loaded.tsx';
+import MeetingTypeCard from '../MeetingTypeCard.tsx';
 import NewMeetingTypeForm from '../NewMeetingTypeForm.tsx';
 
 function OwnerMeetingTypesPage() {
@@ -29,7 +27,7 @@ function OwnerMeetingTypesPage() {
             <Text>Типов встреч пока нет.</Text>
           ) : (
             meetingTypes.map((meetingType) => (
-              <MeetingTypeCard key={meetingType.id} meetingType={meetingType} />
+              <MeetingTypeCard key={meetingType.id} meetingType={meetingType} forOwner />
             ))
           )
         }
@@ -44,31 +42,6 @@ function OwnerMeetingTypesPage() {
         <NewMeetingTypeForm onCreated={handleCreated} onCancel={() => setCreating(false)} />
       </Modal>
     </Stack>
-  );
-}
-
-function MeetingTypeCard({ meetingType }: { meetingType: MeetingType }) {
-  const guestPath = `/book/${meetingType.id}`;
-  return (
-    <Card component="article" withBorder radius="md" padding="lg">
-      <Group justify="space-between" align="flex-start" wrap="nowrap">
-        <Title order={2} size="h4">
-          {meetingType.name}
-        </Title>
-        <Badge variant="light">{formatDuration(meetingType.durationMinutes)}</Badge>
-      </Group>
-      {meetingType.description && (
-        <Text c="dimmed" size="sm" mt="xs">
-          {meetingType.description}
-        </Text>
-      )}
-      <Text size="sm" mt="sm">
-        Ссылка для гостей:{' '}
-        <Anchor component={Link} to={guestPath}>
-          {guestPath}
-        </Anchor>
-      </Text>
-    </Card>
   );
 }
 
