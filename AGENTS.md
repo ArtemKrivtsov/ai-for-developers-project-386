@@ -8,7 +8,7 @@
 - `mise daemons start` / `stop` / `logs`: бэкенд на :3000 и фронтенд на :5173, фронтенд проксирует `/api` на бэкенд.
 - `mise run generate`: после правки `spec/main.tsp` пересобирает OpenAPI, типы маршрутов бэкенда и SDK фронтенда.
 - `mise run lint`, `mise run test`: линтеры и тесты по отдельности.
-- `pnpm --dir backend exec vitest run test/health.test.ts -t "<имя теста>"`: один тест.
+- `pnpm --dir backend exec vitest run test/health.test.ts -t "<имя теста>"`: один тест, во фронтенде так же через `--dir frontend`.
 - `hk check --all -S <step>`: один шаг проверок (`oxlint`, `oxfmt`, `jactionlint`, `generated`, `typecheck`, `test`, `build`).
 - `mise run check`: все проверки, тот же набор запускает CI и pre-push. Изменение готово, когда команда зелёная.
 - `mise run fix`: автоисправления линтеров и форматтера.
@@ -18,7 +18,7 @@
 API идёт от контракта: `spec/main.tsp` → `mise run generate` → `spec/generated/openapi.yaml` → типы и SDK в `backend/src/generated` и `frontend/src/generated`.
 
 - `backend/`: Fastify. fastify-openapi-glue при старте читает `spec/generated/openapi.yaml` и сам строит маршруты и валидацию запросов. Обработчики лежат в `src/handlers.ts` под ключами `operationId` и типизированы сгенерированным `RouteHandlers`, поэтому новая операция в контракте без обработчика валит typecheck. Node запускает TypeScript напрямую, без сборки: относительные импорты пишем с расширением `.ts`, синтаксис только стираемый (без `enum` и `namespace`).
-- `frontend/`: React, Vite и Mantine. К API обращается только через функции SDK из `src/generated`.
+- `frontend/`: React, Vite и Mantine, маршруты на React Router в декларативном режиме. К API обращается только через функции SDK из `src/generated`. Тесты рендерят `App` в `MemoryRouter` по нужному адресу и проверяют страницу через Testing Library.
 
 ## Правила
 

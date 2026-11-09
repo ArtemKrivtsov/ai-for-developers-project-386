@@ -1,28 +1,19 @@
-import { Badge, Container, Group, Title } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { Route, Routes } from 'react-router';
 
-import { getHealth } from './generated';
-
-type ApiStatus = 'loading' | 'ok' | 'error';
+import Layout from './Layout.tsx';
+import CatalogPage from './pages/CatalogPage.tsx';
+import HomePage from './pages/HomePage.tsx';
+import NotFoundPage from './pages/NotFoundPage.tsx';
 
 function App() {
-  const [apiStatus, setApiStatus] = useState<ApiStatus>('loading');
-
-  useEffect(() => {
-    getHealth()
-      .then(({ data }) => setApiStatus(data?.status === 'ok' ? 'ok' : 'error'))
-      .catch(() => setApiStatus('error'));
-  }, []);
-
   return (
-    <Container py="xl">
-      <Group justify="space-between">
-        <Title order={1}>Calendar</Title>
-        <Badge color={apiStatus === 'ok' ? 'green' : apiStatus === 'error' ? 'red' : 'gray'}>
-          API: {apiStatus}
-        </Badge>
-      </Group>
-    </Container>
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<HomePage />} />
+        <Route path="book" element={<CatalogPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    </Routes>
   );
 }
 

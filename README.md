@@ -35,8 +35,8 @@
 
 - Контракт API: TypeSpec → OpenAPI 3.0.
 - Бэкенд: Node.js 26, Fastify, fastify-openapi-glue, типы маршрутов генерирует hey-api.
-- Фронтенд: React, Vite, Mantine, SDK генерирует hey-api.
-- Тесты: Vitest. Линтеры: oxlint, oxfmt, jactionlint, tsc.
+- Фронтенд: React, Vite, Mantine, React Router, SDK генерирует hey-api.
+- Тесты: Vitest, во фронтенде Testing Library и jsdom. Линтеры: oxlint, oxfmt, jactionlint, tsc.
 - Окружение: mise (инструменты, задачи, фоновые процессы), hk (git-хуки), pnpm workspaces.
 
 ## Установка
