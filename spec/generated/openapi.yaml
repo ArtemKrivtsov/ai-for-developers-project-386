@@ -29,8 +29,52 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/MeetingType'
+    post:
+      operationId: createMeetingType
+      description: Creates a meeting type at the end of the list.
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingType'
+        '400':
+          description: The request breaks the contract.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewMeetingType'
 components:
   schemas:
+    ApiError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - validation_error
+            - meeting_type_not_found
+            - conflict
+        message:
+          type: string
+          description: An explanation in English for developers, not meant for the user interface.
+        field:
+          type: string
+          description: |-
+            The first field that failed validation: a body property or a path parameter.
+            Only `validation_error` has it, and not when the body is not valid JSON.
+      description: Why the server refused the request.
     Health:
       type: object
       required:
@@ -69,6 +113,31 @@ components:
             - 90
             - 120
       description: A kind of meeting the owner offers to guests.
+    NewMeetingType:
+      type: object
+      required:
+        - name
+        - durationMinutes
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: \S
+        durationMinutes:
+          type: number
+          enum:
+            - 15
+            - 30
+            - 45
+            - 60
+            - 90
+            - 120
+        description:
+          type: string
+          maxLength: 500
+          description: Omitted or empty when the meeting type has no description.
+      description: What the owner fills in to create a meeting type. The server trims `name` and `description`.
     uuid:
       type: string
       format: uuid

@@ -4,6 +4,22 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
+/**
+ * Why the server refused the request.
+ */
+export type ApiError = {
+    code: 'validation_error' | 'meeting_type_not_found' | 'conflict';
+    /**
+     * An explanation in English for developers, not meant for the user interface.
+     */
+    message: string;
+    /**
+     * The first field that failed validation: a body property or a path parameter.
+     * Only `validation_error` has it, and not when the body is not valid JSON.
+     */
+    field?: string;
+};
+
 export type Health = {
     status: 'ok';
 };
@@ -19,6 +35,18 @@ export type MeetingType = {
      */
     description: string;
     durationMinutes: 15 | 30 | 45 | 60 | 90 | 120;
+};
+
+/**
+ * What the owner fills in to create a meeting type. The server trims `name` and `description`.
+ */
+export type NewMeetingType = {
+    name: string;
+    durationMinutes: 15 | 30 | 45 | 60 | 90 | 120;
+    /**
+     * Omitted or empty when the meeting type has no description.
+     */
+    description?: string;
 };
 
 export type Uuid = string;
@@ -54,3 +82,28 @@ export type ListMeetingTypesResponses = {
 };
 
 export type ListMeetingTypesResponse = ListMeetingTypesResponses[keyof ListMeetingTypesResponses];
+
+export type CreateMeetingTypeData = {
+    body: NewMeetingType;
+    path?: never;
+    query?: never;
+    url: '/api/meeting-types';
+};
+
+export type CreateMeetingTypeErrors = {
+    /**
+     * The request breaks the contract.
+     */
+    400: ApiError;
+};
+
+export type CreateMeetingTypeError = CreateMeetingTypeErrors[keyof CreateMeetingTypeErrors];
+
+export type CreateMeetingTypeResponses = {
+    /**
+     * The request has succeeded and a new resource has been created as a result.
+     */
+    201: MeetingType;
+};
+
+export type CreateMeetingTypeResponse = CreateMeetingTypeResponses[keyof CreateMeetingTypeResponses];

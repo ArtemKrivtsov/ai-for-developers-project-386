@@ -10,5 +10,9 @@ export function createHandlers(calendar: Calendar): RouteHandlers {
     async listMeetingTypes(_request, reply) {
       return reply.code(200).send(calendar.listMeetingTypes());
     },
+
+    async createMeetingType(request, reply) {
+      return reply.code(201).send(calendar.createMeetingType(request.body));
+    },
   };
 }

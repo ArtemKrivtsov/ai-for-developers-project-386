@@ -2,7 +2,7 @@
 
 import type { RouteHandler } from 'fastify';
 
-import type { GetHealthResponses, ListMeetingTypesResponses } from './types.gen.ts';
+import type { CreateMeetingTypeData, CreateMeetingTypeErrors, CreateMeetingTypeResponses, GetHealthResponses, ListMeetingTypesResponses } from './types.gen.ts';
 
 export type RouteHandlers = {
     getHealth: RouteHandler<{
@@ -10,5 +10,9 @@ export type RouteHandlers = {
     }>;
     listMeetingTypes: RouteHandler<{
         Reply: ListMeetingTypesResponses;
+    }>;
+    createMeetingType: RouteHandler<{
+        Body: CreateMeetingTypeData['body'];
+        Reply: CreateMeetingTypeErrors & CreateMeetingTypeResponses;
     }>;
 };
