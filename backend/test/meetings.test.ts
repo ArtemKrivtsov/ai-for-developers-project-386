@@ -60,6 +60,18 @@ test('booking a meeting of an unknown meeting type fails with meeting_type_not_f
   expect(response.json()).toEqual({ code: 'meeting_type_not_found', message: expect.any(String) });
 });
 
+test('an unknown meeting type is not found before its start is checked', async () => {
+  const app = buildTestApp({ now: monday });
+
+  // Saturday, 14 November: no meeting type has a slot then.
+  const response = await book(app, '5b0e8f2c-3d71-4a96-b8e4-1c2f7a9d6e30', {
+    start: '2026-11-14T10:00:00+03:00',
+  });
+
+  expect(response.statusCode).toBe(404);
+  expect(response.json()).toEqual({ code: 'meeting_type_not_found', message: expect.any(String) });
+});
+
 test('the server trims spaces around the guest name and keeps the email as it is', async () => {
   const app = buildTestApp({ now: monday });
   const meetingType = await createMeetingType(app, 30);
