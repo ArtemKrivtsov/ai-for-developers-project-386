@@ -26,8 +26,8 @@ API идёт от контракта: `spec/main.tsp` → `mise run generate` �
 - `.github/workflows/hexlet-check.yml` принадлежит Хекслету, его не меняем.
 - Правила линтеров остаются включёнными. Исключение делаем точечно, для одного пути и одного правила, с причиной и после решения человека.
 - TypeScript держим на 6.x: hey-api использует JS-API компилятора, которого нет в TypeScript 7.
-- Коммиты пишем по [Conventional Commits](https://www.conventionalcommits.org/): `<type>(<scope>): <description>`, например `docs: add booking scenario to README`. Описание на английском, в повелительном наклонении.
-- Коммитим прямо в `main`, без отдельных веток.
+- Коммиты пишем по [Conventional Commits](https://www.conventionalcommits.org/): `<type>(<scope>): <description>`, например `docs: add booking scenario to README`. Описание на английском, в повелительном наклонении. Коммит реализации ссылается на тикет, который закрывает: `feat: add meeting type catalog (#18)`.
+- Тикеты спецификации реализуем в одной общей ветке и вливаем её в `main` после общего ревью. Правки вне тикетов коммитим прямо в `main`.
 
 ## Agent skills
 
