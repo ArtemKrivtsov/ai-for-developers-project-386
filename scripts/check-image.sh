@@ -39,8 +39,9 @@ expect_status 200 /
 # A direct link to a page of the SPA.
 expect_status 200 /book
 expect_status 200 /api/health
-# An unknown API path is not a page.
+# An unknown API path is not a page, and neither is the API root.
 expect_status 404 /api/unknown
+expect_status 404 /api
 
 # The server runs as PID 1, which ignores SIGTERM unless the process handles it.
 # Otherwise docker stop waits out the timeout and kills the container with exit code 137.

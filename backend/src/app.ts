@@ -52,6 +52,8 @@ async function frontend(app: FastifyInstance) {
   // Routes each file of the build at startup and leaves `/*` to the fallback below.
   await app.register(fastifyStatic, { root: frontendBuild, wildcard: false });
   app.get('/*', (_request, reply) => reply.sendFile('index.html'));
-  // An unknown API path gets the standard Fastify 404, not the page.
-  app.get('/api/*', (_request, reply) => reply.callNotFound());
+  // The API root and an unknown API path get the standard Fastify 404, not the page.
+  for (const api of ['/api', '/api/*']) {
+    app.get(api, (_request, reply) => reply.callNotFound());
+  }
 }
