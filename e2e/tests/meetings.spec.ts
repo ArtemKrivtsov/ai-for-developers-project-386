@@ -54,7 +54,7 @@ async function submit(page: Page) {
     .click();
 }
 
-test('a guest books the first free slot of a new meeting type, and the owner sees the meeting', async ({
+test('a guest takes the first free slot of a new meeting type, and the owner sees the meeting', async ({
   page,
 }) => {
   const meetingType = unique('Консультация');
@@ -98,7 +98,7 @@ test('two guests open one slot, and the second to send the form is told it is ta
   const meetingType = unique('Разбор кода');
   await createMeetingType(page, meetingType);
 
-  // Two guests in browsers of their own, each with the slot open before either books it.
+  // Two guests in browsers of their own, each with the slot open before either sends the form.
   // A context made in a test takes `use` of the config too: the base URL and the time zone.
   const contexts = [await browser.newContext(), await browser.newContext()];
   const [first, second] = await Promise.all(contexts.map((context) => context.newPage()));

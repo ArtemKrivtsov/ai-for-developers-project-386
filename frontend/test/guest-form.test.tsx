@@ -95,7 +95,7 @@ test.each([
   expect(field()).toHaveAccessibleDescription(message);
 });
 
-test('a booked meeting replaces the days and slots with a confirmation', async () => {
+test('a created meeting replaces the days and slots with a confirmation', async () => {
   const sent: (NewMeeting & { meetingTypeId: string })[] = [];
   let respond!: () => void;
   const responded = new Promise<void>((resolve) => {

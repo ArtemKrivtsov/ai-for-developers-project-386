@@ -79,7 +79,7 @@ model Meeting {
 }
 
 /**
- * What the guest fills in to book a meeting. `start` is compared with the slots as a moment, so
+ * What the guest fills in to get a meeting. `start` is compared with the slots as a moment, so
  * any offset works. The server trims `guestName` and keeps `guestEmail` as it is.
  */
 model NewMeeting {
@@ -154,7 +154,7 @@ op listSlots(@path meetingTypeId: uuid):
   | MeetingTypeNotFoundResponse;
 
 /**
- * Books a meeting of the type. `start` must be one of the slots the server would list for it
+ * Creates a meeting of the type. `start` must be one of the slots the server would list for it
  * right now. A start that no slot has even without other meetings fails validation with
  * `field: start`, and a start whose slot overlaps another meeting gets `conflict`.
  */

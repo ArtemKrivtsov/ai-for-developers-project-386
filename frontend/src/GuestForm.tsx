@@ -42,7 +42,7 @@ type Props = {
   start: string;
   guest: Guest;
   onGuestChange: (guest: Guest) => void;
-  onBooked: (meeting: Meeting) => void;
+  onCreated: (meeting: Meeting) => void;
   /** The server no longer knows the meeting type. */
   onNotFound: () => void;
   /**
@@ -60,7 +60,7 @@ function GuestForm({
   start,
   guest,
   onGuestChange,
-  onBooked,
+  onCreated,
   onNotFound,
   onSlotGone,
   onOtherTime,
@@ -76,7 +76,7 @@ function GuestForm({
       body: { start, guestName: name, guestEmail: email },
     });
     setSubmitting(false);
-    if (data) return onBooked(data);
+    if (data) return onCreated(data);
     if (response?.status === 404) return onNotFound();
     if (response?.status === 409) return onSlotGone('Это время уже заняли. Выберите другое.');
 

@@ -38,7 +38,7 @@ function MeetingTypeView({ meetingTypeId }: { meetingTypeId: string }) {
       return <MeetingTypeNotFound />;
     case 'loaded':
       return (
-        <Booking
+        <MeetingTypeColumns
           meetingType={meetingType.meetingType}
           slots={slots}
           reloadSlots={reloadSlots}
@@ -59,7 +59,7 @@ function MeetingTypeNotFound() {
   );
 }
 
-type BookingProps = {
+type MeetingTypeColumnsProps = {
   meetingType: MeetingType;
   slots: Slots;
   reloadSlots: () => void;
@@ -68,11 +68,16 @@ type BookingProps = {
 
 /**
  * Three columns: the meeting and the choice, the days of the window and the slots of a day.
- * A chosen slot puts the guest form in place of the slots, and a booked meeting puts
+ * A chosen slot puts the guest form in place of the slots, and a created meeting puts
  * the confirmation in place of the days and the slots. A slot the server refuses as no longer
  * free brings back fresh slots with a notice above them.
  */
-function Booking({ meetingType, slots, reloadSlots, onNotFound }: BookingProps) {
+function MeetingTypeColumns({
+  meetingType,
+  slots,
+  reloadSlots,
+  onNotFound,
+}: MeetingTypeColumnsProps) {
   const [chosenDate, setChosenDate] = useState<string | null>(null);
   const [chosenStart, setChosenStart] = useState<string | null>(null);
   const [guest, setGuest] = useState<Guest>({ name: '', email: '' });
@@ -129,7 +134,7 @@ function Booking({ meetingType, slots, reloadSlots, onNotFound }: BookingProps) 
                     start={slot.start}
                     guest={guest}
                     onGuestChange={setGuest}
-                    onBooked={setMeeting}
+                    onCreated={setMeeting}
                     onNotFound={onNotFound}
                     onSlotGone={(text) => {
                       setChosenStart(null);
@@ -242,7 +247,7 @@ function TimeColumn({ day, notice, onChoose }: TimeColumnProps) {
   );
 }
 
-/** Takes the place of the days and the slots once the guest has booked a meeting. */
+/** Takes the place of the days and the slots once the meeting is created. */
 function Confirmation({ meeting }: { meeting: Meeting }) {
   return (
     <Column title="Вы записаны">

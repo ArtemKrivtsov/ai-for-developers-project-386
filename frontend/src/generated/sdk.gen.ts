@@ -43,7 +43,7 @@ export const createMeetingType = <ThrowOnError extends boolean = false>(options:
 export const getMeetingType = <ThrowOnError extends boolean = false>(options: Options<GetMeetingTypeData, ThrowOnError>): RequestResult<GetMeetingTypeResponses, GetMeetingTypeErrors, ThrowOnError> => (options.client ?? client).get<GetMeetingTypeResponses, GetMeetingTypeErrors, ThrowOnError>({ url: '/api/meeting-types/{meetingTypeId}', ...options });
 
 /**
- * Books a meeting of the type. `start` must be one of the slots the server would list for it
+ * Creates a meeting of the type. `start` must be one of the slots the server would list for it
  * right now. A start that no slot has even without other meetings fails validation with
  * `field: start`, and a start whose slot overlaps another meeting gets `conflict`.
  */

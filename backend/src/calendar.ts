@@ -22,7 +22,7 @@ export type Calendar = {
   /** Slots of the meeting type for each day of the booking window, or nothing for an unknown id. */
   listSlots(meetingTypeId: string): SlotDay[] | undefined;
   /**
-   * Books a meeting of the meeting type for the guest. The start must be one of the slots
+   * Creates a meeting of the meeting type for the guest. The start must be one of the slots
    * `listSlots` would give right now: first it is looked up among the slots ignoring meetings,
    * then checked against the meetings of every meeting type.
    */
@@ -72,7 +72,7 @@ const starterMeetingTypes: NewMeetingType[] = [
  */
 export function createCalendar({ now }: { now: Clock }): Calendar {
   const meetingTypes: MeetingType[] = [];
-  /** Meetings of every meeting type in booking order. */
+  /** Meetings of every meeting type in the order they were created. */
   const meetings: Meeting[] = [];
 
   function createMeetingType({ name, description, durationMinutes }: NewMeetingType) {

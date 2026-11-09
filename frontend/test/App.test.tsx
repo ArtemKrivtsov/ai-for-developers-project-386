@@ -26,7 +26,7 @@ test('the «Записаться» button opens the meeting type catalog', async
   ).toBeInTheDocument();
 });
 
-test('the header links to booking and to the owner pages', () => {
+test('the header links to the catalog and to the owner pages', () => {
   renderAt('/');
 
   const header = screen.getByRole('banner');

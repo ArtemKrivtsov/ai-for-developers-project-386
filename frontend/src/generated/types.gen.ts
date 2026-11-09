@@ -56,7 +56,7 @@ export type MeetingType = {
 };
 
 /**
- * What the guest fills in to book a meeting. `start` is compared with the slots as a moment, so
+ * What the guest fills in to get a meeting. `start` is compared with the slots as a moment, so
  * any offset works. The server trims `guestName` and keeps `guestEmail` as it is.
  */
 export type NewMeeting = {
