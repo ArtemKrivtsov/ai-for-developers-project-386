@@ -4,6 +4,7 @@ import Layout from './Layout.tsx';
 import OwnerLayout from './OwnerLayout.tsx';
 import CatalogPage from './pages/CatalogPage.tsx';
 import HomePage from './pages/HomePage.tsx';
+import MeetingTypePage from './pages/MeetingTypePage.tsx';
 import NotFoundPage from './pages/NotFoundPage.tsx';
 import OwnerMeetingTypesPage from './pages/OwnerMeetingTypesPage.tsx';
 
@@ -13,6 +14,7 @@ function App() {
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="book" element={<CatalogPage />} />
+        <Route path="book/:meetingTypeId" element={<MeetingTypePage />} />
         <Route element={<OwnerLayout />}>
           <Route path="owner/types" element={<OwnerMeetingTypesPage />} />
         </Route>
