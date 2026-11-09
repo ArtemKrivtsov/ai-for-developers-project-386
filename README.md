@@ -1,6 +1,5 @@
 # Календарь звонков
 
-
 [![hexlet-check](https://github.com/ArtemKrivtsov/ai-for-developers-project-386/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/ArtemKrivtsov/ai-for-developers-project-386/actions)
 
 Разработайте совместно с ИИ сервис для бронирования календаря
@@ -34,20 +33,30 @@
 
 ## Стек
 
-- Разное
+- Контракт API: TypeSpec → OpenAPI 3.0.
+- Бэкенд: Node.js 26, Fastify, fastify-openapi-glue, типы маршрутов генерирует hey-api.
+- Фронтенд: React, Vite, Mantine, SDK генерирует hey-api.
+- Тесты: Vitest. Линтеры: oxlint, oxfmt, jactionlint, tsc.
+- Окружение: mise (инструменты, задачи, фоновые процессы), hk (git-хуки), pnpm workspaces.
 
 ## Установка
 
-<!-- Опишите установку: клонирование, зависимости, переменные окружения -->
+Нужен [mise](https://mise.jdx.dev/getting-started.html), остальные инструменты он поставит сам.
 
 ```bash
 git clone https://github.com/ArtemKrivtsov/ai-for-developers-project-386.git
 cd ai-for-developers-project-386
+mise trust && mise install
+mise run setup
 ```
 
 ## Использование
 
-<!-- Добавьте примеры запуска и запись asciinema — именно это смотрит работодатель -->
+```bash
+mise daemons start   # бэкенд на :3000, фронтенд на http://localhost:5173
+mise daemons stop
+mise run check       # все проверки, те же, что в CI
+```
 
 ---
 
