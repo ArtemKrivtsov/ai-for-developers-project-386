@@ -1,5 +1,5 @@
 import fastifyStatic from '@fastify/static';
-import Fastify, { type FastifyInstance } from 'fastify';
+import Fastify, { type FastifyInstance, type RouteOptions } from 'fastify';
 import openapiGlue from 'fastify-openapi-glue';
 import { fileURLToPath } from 'node:url';
 
@@ -21,11 +21,24 @@ export function buildApp({ now = () => new Date(), serveFrontend = false }: AppO
   const app = Fastify({ logger: process.env.NODE_ENV !== 'test' });
   const serviceHandlers = createHandlers(createCalendar({ now }));
   app.setErrorHandler(handleError);
+  app.addHook('onRoute', checkEveryBody);
   app.register(openapiGlue, { specification, serviceHandlers });
   if (serveFrontend) {
     app.register(frontend);
   }
   return app;
+}
+
+type BodySchema = { content?: Record<string, { schema: unknown }> };
+
+/**
+ * fastify-openapi-glue gives Fastify the body schema by content type, and Fastify skips the check
+ * when a request has no body or a body of another type. Every body in the contract is JSON,
+ * so its schema checks every request: a missing or plain-text body breaks it as well.
+ */
+function checkEveryBody(route: RouteOptions) {
+  const json = (route.schema?.body as BodySchema | undefined)?.content?.['application/json'];
+  if (route.schema && json) route.schema.body = json.schema;
 }
 
 /** The SPA has no server rendering (ADR 0001): a GET that matches no file gets `index.html`. */

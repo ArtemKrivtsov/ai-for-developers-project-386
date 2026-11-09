@@ -145,6 +145,24 @@ test('creating a meeting type from a body that is not JSON fails with a validati
   expect(response.json()).toEqual({ code: 'validation_error', message: expect.any(String) });
 });
 
+test.each([
+  ['there is no body', {}],
+  [
+    'the body is plain text',
+    { headers: { 'content-type': 'text/plain' }, payload: 'Созвон на 30 минут' },
+  ],
+])(
+  'creating a meeting type fails with a validation error without a field when %s',
+  async (_case, body) => {
+    const app = buildTestApp();
+
+    const response = await request(app, { method: 'POST', url: '/api/meeting-types', ...body });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({ code: 'validation_error', message: expect.any(String) });
+  },
+);
+
 test('a meeting type can be read by its id', async () => {
   const app = buildTestApp();
   const created = await request(app, {

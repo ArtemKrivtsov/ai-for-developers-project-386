@@ -105,6 +105,29 @@ test.each([
   expect(response.json()).toEqual({ code: 'validation_error', message: expect.any(String), field });
 });
 
+test.each([
+  ['there is no body', {}],
+  [
+    'the body is plain text',
+    { headers: { 'content-type': 'text/plain' }, payload: '2026-11-10T09:00:00+03:00' },
+  ],
+])(
+  'booking a meeting fails with a validation error without a field when %s',
+  async (_case, body) => {
+    const app = buildTestApp({ now: monday });
+    const meetingType = await createMeetingType(app, 30);
+
+    const response = await request(app, {
+      method: 'POST',
+      url: `/api/meeting-types/${meetingType.id}/meetings`,
+      ...body,
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({ code: 'validation_error', message: expect.any(String) });
+  },
+);
+
 test('booking a meeting of a meeting type id that is not a UUID fails with a validation error', async () => {
   const app = buildTestApp({ now: monday });
 
