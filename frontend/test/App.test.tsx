@@ -47,6 +47,17 @@ test('the header highlights «Владельцу» on the owner pages', async ()
   await screen.findByText('Типов встреч пока нет.');
 });
 
+test('the header does not highlight «Владельцу» on an unknown address inside /owner', () => {
+  renderAt('/owner/no-such-page');
+
+  expect(
+    screen.getByRole('heading', { level: 1, name: 'Страница не найдена' }),
+  ).toBeInTheDocument();
+  expect(
+    within(screen.getByRole('banner')).getByRole('link', { name: 'Владельцу' }),
+  ).not.toHaveAttribute('aria-current');
+});
+
 test('an unknown address shows the not-found page with a link home', () => {
   renderAt('/no-such-page');
 

@@ -1,8 +1,8 @@
 import { Anchor, AppShell, Button, Container, Group } from '@mantine/core';
-import { Link, Outlet, useMatch } from 'react-router';
+import { Link, Outlet } from 'react-router';
 
-function Layout() {
-  const onOwnerPages = useMatch('/owner/*') !== null;
+/** The header and the page. `onOwnerPages` highlights «Владельцу» in the header. */
+function Layout({ onOwnerPages = false }: { onOwnerPages?: boolean }) {
   return (
     <AppShell header={{ height: 60 }}>
       <AppShell.Header>

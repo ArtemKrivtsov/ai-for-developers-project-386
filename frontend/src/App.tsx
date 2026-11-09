@@ -16,11 +16,14 @@ function App() {
         <Route index element={<HomePage />} />
         <Route path="book" element={<CatalogPage />} />
         <Route path="book/:meetingTypeId" element={<MeetingTypePage />} />
+        {/* Unknown addresses inside /owner too: they are not owner pages. */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+      <Route element={<Layout onOwnerPages />}>
         <Route element={<OwnerLayout />}>
           <Route path="owner" element={<OwnerMeetingsPage />} />
           <Route path="owner/types" element={<OwnerMeetingTypesPage />} />
         </Route>
-        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );
