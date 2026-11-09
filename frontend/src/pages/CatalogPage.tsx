@@ -1,32 +1,12 @@
 import { Badge, Card, Group, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 
 import { formatDuration } from '../format.ts';
-import { listMeetingTypes, type MeetingType } from '../generated/index.ts';
-
-type Catalog =
-  | { status: 'loading' }
-  | { status: 'failed' }
-  | { status: 'loaded'; meetingTypes: MeetingType[] };
+import type { MeetingType } from '../generated/index.ts';
+import { type MeetingTypes, useMeetingTypes } from '../useMeetingTypes.ts';
 
 function CatalogPage() {
-  const [catalog, setCatalog] = useState<Catalog>({ status: 'loading' });
-
-  useEffect(() => {
-    let ignore = false;
-    listMeetingTypes({ throwOnError: true }).then(
-      ({ data }) => {
-        if (!ignore) setCatalog({ status: 'loaded', meetingTypes: data });
-      },
-      () => {
-        if (!ignore) setCatalog({ status: 'failed' });
-      },
-    );
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  const [catalog] = useMeetingTypes();
 
   return (
     <Stack gap="md">
@@ -37,7 +17,7 @@ function CatalogPage() {
   );
 }
 
-function CatalogContent({ catalog }: { catalog: Catalog }) {
+function CatalogContent({ catalog }: { catalog: MeetingTypes }) {
   switch (catalog.status) {
     case 'loading':
       return <Loader role="status" aria-label="Загрузка" />;

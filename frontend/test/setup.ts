@@ -40,3 +40,12 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: vi.fn(),
   })),
 });
+
+// jsdom has no layout either: the scroll area of Mantine dropdowns such as Select watches
+// its size with ResizeObserver and scrolls to the selected option.
+window.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+window.HTMLElement.prototype.scrollIntoView = () => {};
