@@ -25,7 +25,7 @@ function MeetingTypePage() {
 
 function MeetingTypeView({ meetingTypeId }: { meetingTypeId: string }) {
   const meetingType = useMeetingType(meetingTypeId);
-  const slots = useSlots(meetingTypeId);
+  const [slots, reloadSlots] = useSlots(meetingTypeId);
   // The server may stop knowing the meeting type after the page has loaded it.
   const [gone, setGone] = useState(false);
 
@@ -42,6 +42,7 @@ function MeetingTypeView({ meetingTypeId }: { meetingTypeId: string }) {
         <Booking
           meetingType={meetingType.meetingType}
           slots={slots}
+          reloadSlots={reloadSlots}
           onNotFound={() => setGone(true)}
         />
       );
@@ -59,18 +60,26 @@ function MeetingTypeNotFound() {
   );
 }
 
-type BookingProps = { meetingType: MeetingType; slots: Slots; onNotFound: () => void };
+type BookingProps = {
+  meetingType: MeetingType;
+  slots: Slots;
+  reloadSlots: () => void;
+  onNotFound: () => void;
+};
 
 /**
  * Three columns: the meeting and the choice, the days of the window and the slots of a day.
  * A chosen slot puts the guest form in place of the slots, and a booked meeting puts
- * the confirmation in place of the days and the slots.
+ * the confirmation in place of the days and the slots. A slot the server refuses as no longer
+ * free brings back fresh slots with a notice above them.
  */
-function Booking({ meetingType, slots, onNotFound }: BookingProps) {
+function Booking({ meetingType, slots, reloadSlots, onNotFound }: BookingProps) {
   const [chosenDate, setChosenDate] = useState<string | null>(null);
   const [chosenStart, setChosenStart] = useState<string | null>(null);
   const [guest, setGuest] = useState<Guest>({ name: '', email: '' });
   const [meeting, setMeeting] = useState<Meeting | null>(null);
+  /** Why the guest is choosing the time again, until they choose something. */
+  const [notice, setNotice] = useState<string | null>(null);
 
   const days = slots.status === 'loaded' ? slots.days : [];
   // The chosen day while it has slots, otherwise the first day that has some.
@@ -109,6 +118,7 @@ function Booking({ meetingType, slots, onNotFound }: BookingProps) {
                 onChoose={(date) => {
                   setChosenDate(date);
                   setChosenStart(null);
+                  setNotice(null);
                 }}
               />
             </Grid.Col>
@@ -122,6 +132,11 @@ function Booking({ meetingType, slots, onNotFound }: BookingProps) {
                     onGuestChange={setGuest}
                     onBooked={setMeeting}
                     onNotFound={onNotFound}
+                    onSlotGone={(text) => {
+                      setChosenStart(null);
+                      setNotice(text);
+                      reloadSlots();
+                    }}
                     onOtherTime={() => setChosenStart(null)}
                   />
                 </Column>
@@ -129,9 +144,11 @@ function Booking({ meetingType, slots, onNotFound }: BookingProps) {
                 day && (
                   <TimeColumn
                     day={day}
+                    notice={notice}
                     onChoose={({ start }) => {
                       setChosenDate(day.date);
                       setChosenStart(start);
+                      setNotice(null);
                     }}
                   />
                 )
@@ -196,10 +213,10 @@ function DayColumn({ days, chosen, onChoose }: DayColumnProps) {
   );
 }
 
-type TimeColumnProps = { day: SlotDay; onChoose: (slot: Slot) => void };
+type TimeColumnProps = { day: SlotDay; notice: string | null; onChoose: (slot: Slot) => void };
 
 /** The right column until a slot is chosen: the slots of the chosen day. */
-function TimeColumn({ day, onChoose }: TimeColumnProps) {
+function TimeColumn({ day, notice, onChoose }: TimeColumnProps) {
   return (
     <Column title="Время">
       <div>
@@ -208,6 +225,11 @@ function TimeColumn({ day, onChoose }: TimeColumnProps) {
           {moscowTimeNote}
         </Text>
       </div>
+      {notice && (
+        <Text c="red" size="sm">
+          {notice}
+        </Text>
+      )}
       <ScrollArea.Autosize mah={360} type="auto" offsetScrollbars>
         <Stack gap="xs">
           {day.slots.map((slot) => (

@@ -45,6 +45,11 @@ type Props = {
   onBooked: (meeting: Meeting) => void;
   /** The server no longer knows the meeting type. */
   onNotFound: () => void;
+  /**
+   * The server refused the slot: someone has taken it or it has left the booking window.
+   * `notice` tells the guest so above the slots.
+   */
+  onSlotGone: (notice: string) => void;
   /** Goes back to the slots of the day. */
   onOtherTime: () => void;
 };
@@ -57,6 +62,7 @@ function GuestForm({
   onGuestChange,
   onBooked,
   onNotFound,
+  onSlotGone,
   onOtherTime,
 }: Props) {
   const [errors, setErrors] = useState<Errors>({});
@@ -72,8 +78,12 @@ function GuestForm({
     setSubmitting(false);
     if (data) return onBooked(data);
     if (response?.status === 404) return onNotFound();
+    if (response?.status === 409) return onSlotGone('Это время уже заняли. Выберите другое.');
 
     // Without a response the request never reached the server, and `error` is not an ApiError.
+    if (response?.status === 400 && error.code === 'validation_error' && error.field === 'start') {
+      return onSlotGone('Это время больше недоступно. Выберите другое.');
+    }
     const fieldError = response?.status === 400 ? serverFieldError(error) : undefined;
     if (fieldError) setErrors(fieldError);
     else setFailed(true);

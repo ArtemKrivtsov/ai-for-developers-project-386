@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { HttpResponse } from 'msw';
 import { expect, test } from 'vitest';
 
-import type { ApiError, Meeting, NewMeeting } from '../src/generated/index.ts';
+import type { ApiError, Meeting, NewMeeting, Slot } from '../src/generated/index.ts';
 import { handleCreateMeeting } from '../src/generated/msw.gen.ts';
 import {
   id,
@@ -218,3 +218,91 @@ test.each([
     expect(within(form()).getByRole('button', { name: 'Записаться' })).toBeEnabled();
   },
 );
+
+const conflict: ApiError = { code: 'conflict', message: 'The time overlaps another meeting' };
+const startRejected: ApiError = {
+  code: 'validation_error',
+  message: 'No slot of the booking window starts at this time',
+  field: 'start',
+};
+
+const wednesdaySlots: Slot[] = [
+  { start: '2026-11-11T14:00:00+03:00', end: '2026-11-11T14:30:00+03:00' },
+];
+
+const slotLabels = () =>
+  within(timeColumn())
+    .getAllByRole('button')
+    .map((button) => button.textContent);
+
+/** Opens the page with slots on Wednesday and Thursday and chooses a Thursday slot. */
+async function chooseThursdaySlot(slot: string) {
+  serve(slotDays({ '2026-11-11': wednesdaySlots, '2026-11-12': thursdaySlots }));
+  renderAt(`/book/${id}`);
+  await userEvent.click(await screen.findByRole('button', { name: 'четверг, 12 ноября' }));
+  await userEvent.click(within(timeColumn()).getByRole('button', { name: slot }));
+}
+
+test.each([
+  ['a conflict', 'Это время уже заняли. Выберите другое.', 409, conflict],
+  ['a rejected start', 'Это время больше недоступно. Выберите другое.', 400, startRejected],
+])(
+  '%s sends the guest back to fresh slots of the chosen day with «%s»',
+  async (_case, notice, status, error) => {
+    server.use(handleCreateMeeting(() => HttpResponse.json(error, { status })));
+    await chooseThursdaySlot('09:30–10:00');
+    await fill(nameField(), 'Иван Петров');
+    await fill(emailField(), 'ivan@example.com');
+    // Meanwhile someone else has taken 09:30.
+    serve(slotDays({ '2026-11-11': wednesdaySlots, '2026-11-12': thursdaySlots.slice(0, 1) }));
+
+    await userEvent.click(within(form()).getByRole('button', { name: 'Записаться' }));
+
+    expect(await screen.findByText(notice)).toBeInTheDocument();
+    expect(within(timeColumn()).getByText(notice)).toBeInTheDocument();
+    await waitFor(() => expect(slotLabels()).toEqual(['09:00–09:30']));
+    expect(screen.queryByRole('region', { name: 'Ваши данные' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'четверг, 12 ноября' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(within(summary()).getByText('Не выбрано')).toBeInTheDocument();
+
+    await userEvent.click(within(timeColumn()).getByRole('button', { name: '09:00–09:30' }));
+
+    expect(nameField()).toHaveValue('Иван Петров');
+    expect(emailField()).toHaveValue('ivan@example.com');
+
+    await userEvent.click(within(form()).getByRole('button', { name: 'Другое время' }));
+
+    expect(screen.queryByText(notice)).not.toBeInTheDocument();
+  },
+);
+
+test('a chosen day left without slots gives way to the first day that still has some', async () => {
+  server.use(handleCreateMeeting(rejectedBy(startRejected)));
+  await chooseThursdaySlot('09:00–09:30');
+  await fill(nameField(), 'Иван Петров');
+  await fill(emailField(), 'ivan@example.com');
+  // Meanwhile Wednesday and Thursday have filled up, and only Friday has time left.
+  serve(
+    slotDays({
+      '2026-11-13': [{ start: '2026-11-13T16:00:00+03:00', end: '2026-11-13T16:30:00+03:00' }],
+    }),
+  );
+
+  await userEvent.click(within(form()).getByRole('button', { name: 'Записаться' }));
+
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'пятница, 13 ноября' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    ),
+  );
+  expect(screen.getByRole('button', { name: 'четверг, 12 ноября' })).toBeDisabled();
+  expect(within(summary()).getByText('пятница, 13 ноября')).toBeInTheDocument();
+  expect(slotLabels()).toEqual(['16:00–16:30']);
+  expect(
+    within(timeColumn()).getByText('Это время больше недоступно. Выберите другое.'),
+  ).toBeInTheDocument();
+});
