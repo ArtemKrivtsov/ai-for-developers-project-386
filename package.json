@@ -1,10 +1,10 @@
 {
   "name": "ai-for-developers-project-386",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4"
-  },
-  "version": "0.1.0"
+  }
 }
