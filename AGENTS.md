@@ -28,3 +28,17 @@ API идёт от контракта: `spec/main.tsp` → `mise run generate` �
 - TypeScript держим на 6.x: hey-api использует JS-API компилятора, которого нет в TypeScript 7.
 - Коммиты пишем по [Conventional Commits](https://www.conventionalcommits.org/): `<type>(<scope>): <description>`, например `docs: add booking scenario to README`. Описание на английском, в повелительном наклонении.
 - Коммитим прямо в `main`, без отдельных веток.
+
+## Agent skills
+
+### Issue tracker
+
+Карта решений, спецификации и тикеты живут в GitHub Issues репозитория `ArtemKrivtsov/ai-for-developers-project-386`, работаем через `gh`. См. `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Стандартные метки, названия совпадают с ролями. См. `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Один контекст: словарь в `GLOSSARY.md`, решения в `docs/adr/` в корне репозитория. См. `docs/agents/domain.md`.

@@ -50,6 +50,12 @@ mise trust && mise install
 mise run setup
 ```
 
+Для работы с агентом нужен набор скиллов [mattpocock/skills](https://github.com/mattpocock/skills), он ставится глобально. Настройка под репозиторий уже лежит в `docs/agents/`.
+
+```bash
+npx skills@latest add mattpocock/skills -g
+```
+
 ## Использование
 
 ```bash
