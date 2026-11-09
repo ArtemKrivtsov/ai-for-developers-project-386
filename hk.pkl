@@ -36,6 +36,21 @@ local all = (fast) {
     glob = List("frontend/**", "spec/**", "pnpm-lock.yaml")
     check = "pnpm --dir frontend build"
   }
+  // Needs Docker: builds the image and checks the running container.
+  ["image"] {
+    glob = List(
+      "Dockerfile",
+      ".dockerignore",
+      "scripts/check-image.sh",
+      "backend/**",
+      "frontend/**",
+      "spec/**",
+      "package.json",
+      "pnpm-lock.yaml",
+      "pnpm-workspace.yaml"
+    )
+    check = "scripts/check-image.sh"
+  }
 }
 
 hooks {

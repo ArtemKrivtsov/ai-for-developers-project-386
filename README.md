@@ -41,7 +41,7 @@
 
 ## Установка
 
-Нужен [mise](https://mise.jdx.dev/getting-started.html), остальные инструменты он поставит сам.
+Нужен [mise](https://mise.jdx.dev/getting-started.html), остальные инструменты он поставит сам. Для `mise run check` нужен ещё запущенный [Docker](https://docs.docker.com/get-started/get-docker/): проверки собирают образ приложения и запускают контейнер.
 
 ```bash
 git clone https://github.com/ArtemKrivtsov/ai-for-developers-project-386.git

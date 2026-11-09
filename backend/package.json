@@ -1,6 +1,9 @@
 {
   "name": "backend",
   "private": true,
+  "files": [
+    "src"
+  ],
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.ts",
@@ -10,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fastify/static": "^10.1.10",
     "fastify": "^5.12.8",
     "fastify-openapi-glue": "^4.12.0"
   },
