@@ -36,7 +36,7 @@
 - Контракт API: TypeSpec → OpenAPI 3.0.
 - Бэкенд: Node.js 26, Fastify, fastify-openapi-glue, типы маршрутов генерирует hey-api.
 - Фронтенд: React, Vite, Mantine, React Router, SDK генерирует hey-api.
-- Тесты: Vitest, во фронтенде Testing Library и jsdom. Линтеры: oxlint, oxfmt, jactionlint, tsc.
+- Тесты: Vitest, во фронтенде Testing Library и jsdom, сквозной сценарий на Playwright в Chromium. Линтеры: oxlint, oxfmt, jactionlint, tsc.
 - Окружение: mise (инструменты, задачи, фоновые процессы), hk (git-хуки), pnpm workspaces.
 
 ## Установка
@@ -49,6 +49,8 @@ cd ai-for-developers-project-386
 mise trust && mise install
 mise run setup
 ```
+
+`mise run setup` ставит и Chromium для браузерных тестов. На Linux браузеру нужны ещё системные библиотеки: `pnpm --dir e2e exec playwright install-deps chromium`, команда просит sudo.
 
 Для работы с агентом нужен набор скиллов [mattpocock/skills](https://github.com/mattpocock/skills), он ставится глобально. Настройка под репозиторий уже лежит в `docs/agents/`.
 

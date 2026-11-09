@@ -14,8 +14,12 @@ oxfmt = "0.77.0"
 shellcheck = "0.11.0"
 
 [tasks.setup]
-description = "Install dependencies and git hooks"
-run = ["pnpm install --frozen-lockfile", "hk install --mise"]
+description = "Install dependencies, Chromium for the browser tests and git hooks"
+run = [
+  "pnpm install --frozen-lockfile",
+  "pnpm --dir e2e exec playwright install chromium",
+  "hk install --mise",
+]
 
 [tasks.generate]
 description = "Compile the TypeSpec contract to OpenAPI, regenerate server types and the frontend SDK"

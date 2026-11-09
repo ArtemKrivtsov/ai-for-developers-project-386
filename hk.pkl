@@ -43,6 +43,13 @@ local all = (fast) {
     glob = List("frontend/**", "spec/**", "pnpm-lock.yaml")
     check = "pnpm --dir frontend build"
   }
+  // Needs Chromium from `mise run setup`. Playwright builds the frontend into frontend/dist too,
+  // so the step waits for "build" instead of racing it.
+  ["e2e"] {
+    glob = List("backend/**", "frontend/**", "spec/**", "e2e/**", "pnpm-lock.yaml")
+    depends = "build"
+    check = "pnpm --dir e2e exec playwright test"
+  }
   // Needs Docker: builds the image and checks the running container.
   ["image"] {
     glob = List(
