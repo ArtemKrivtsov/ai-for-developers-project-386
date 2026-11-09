@@ -1,7 +1,8 @@
 import { Button, Stack, Text, TextInput } from '@mantine/core';
 import { type FormEvent, useState } from 'react';
 
-import { type ApiError, createMeeting, type Meeting } from './generated/index.ts';
+import { createMeeting, type Meeting } from './generated/index.ts';
+import { type Field, rejectedField } from './rejectedField.ts';
 
 /** What the guest typed. It outlives the form, so going back to the slots keeps it. */
 export type Guest = { name: string; email: string };
@@ -22,19 +23,11 @@ function validate({ name, email }: Guest): Errors {
   return errors;
 }
 
-/**
- * The error to show under the field the server rejected. The texts are ours: the server's
- * `message` is not for users. A rejection without a known field gets none.
- */
-function serverFieldError({ code, field }: ApiError): Errors | undefined {
-  if (code !== 'validation_error') return undefined;
-  switch (field) {
-    case 'guestName':
-      return { name: 'Проверьте имя' };
-    case 'guestEmail':
-      return { email: 'Неверный email' };
-  }
-}
+/** What to show under the fields the server rejects. */
+const serverErrors: Partial<Record<Field, Errors>> = {
+  guestName: { name: 'Проверьте имя' },
+  guestEmail: { email: 'Неверный email' },
+};
 
 type Props = {
   meetingTypeId: string;
@@ -80,11 +73,9 @@ function GuestForm({
     if (response?.status === 404) return onNotFound();
     if (response?.status === 409) return onSlotGone('Это время уже заняли. Выберите другое.');
 
-    // Without a response the request never reached the server, and `error` is not an ApiError.
-    if (response?.status === 400 && error.code === 'validation_error' && error.field === 'start') {
-      return onSlotGone('Это время больше недоступно. Выберите другое.');
-    }
-    const fieldError = response?.status === 400 ? serverFieldError(error) : undefined;
+    const field = rejectedField(error, response);
+    if (field === 'start') return onSlotGone('Это время больше недоступно. Выберите другое.');
+    const fieldError = field && serverErrors[field];
     if (fieldError) setErrors(fieldError);
     else setFailed(true);
   }

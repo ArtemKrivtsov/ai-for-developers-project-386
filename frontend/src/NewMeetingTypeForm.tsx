@@ -2,12 +2,8 @@ import { Button, Group, Select, Stack, Text, Textarea, TextInput } from '@mantin
 import { type FormEvent, useState } from 'react';
 
 import { formatDuration } from './format.ts';
-import {
-  type ApiError,
-  createMeetingType,
-  type MeetingType,
-  type NewMeetingType,
-} from './generated/index.ts';
+import { createMeetingType, type MeetingType, type NewMeetingType } from './generated/index.ts';
+import { type Field, rejectedField } from './rejectedField.ts';
 
 type Duration = MeetingType['durationMinutes'];
 
@@ -30,21 +26,12 @@ function validate({ name, description, durationMinutes }: Values): Errors {
   return errors;
 }
 
-/**
- * The error to show under the field the server rejected. The texts are ours: the server's
- * `message` is not for users. A rejection without a known field gets none.
- */
-function serverFieldError({ code, field }: ApiError): Errors | undefined {
-  if (code !== 'validation_error') return undefined;
-  switch (field) {
-    case 'name':
-      return { name: 'Проверьте название' };
-    case 'description':
-      return { description: 'Проверьте описание' };
-    case 'durationMinutes':
-      return { durationMinutes: 'Выберите длительность' };
-  }
-}
+/** What to show under the fields the server rejects. */
+const serverErrors: Partial<Record<Field, Errors>> = {
+  name: { name: 'Проверьте название' },
+  description: { description: 'Проверьте описание' },
+  durationMinutes: { durationMinutes: 'Выберите длительность' },
+};
 
 type Props = { onCreated: () => void; onCancel: () => void };
 
@@ -63,8 +50,8 @@ function NewMeetingTypeForm({ onCreated, onCancel }: Props) {
     setSubmitting(false);
     if (data) return onCreated();
 
-    // Without a response the request never reached the server, and `error` is not an ApiError.
-    const fieldError = response?.status === 400 ? serverFieldError(error) : undefined;
+    const field = rejectedField(error, response);
+    const fieldError = field && serverErrors[field];
     if (fieldError) setErrors(fieldError);
     else setFailed(true);
   }
