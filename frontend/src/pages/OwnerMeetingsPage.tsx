@@ -1,11 +1,12 @@
-import { Badge, Card, Group, Loader, Stack, Text, Title } from '@mantine/core';
+import { Badge, Card, Group, Stack, Text, Title } from '@mantine/core';
 
 import { formatDuration, formatMeetingTime, moscowTimeNote } from '../format.ts';
 import type { Meeting } from '../generated/index.ts';
-import { type UpcomingMeetings, useUpcomingMeetings } from '../useUpcomingMeetings.ts';
+import { useUpcomingMeetings } from '../load.ts';
+import Loaded from '../Loaded.tsx';
 
 function OwnerMeetingsPage() {
-  const meetings = useUpcomingMeetings();
+  const upcoming = useUpcomingMeetings();
 
   return (
     <Stack gap="md">
@@ -15,22 +16,18 @@ function OwnerMeetingsPage() {
           {moscowTimeNote}
         </Text>
       </div>
-      <MeetingList meetings={meetings} />
+      <Loaded state={upcoming} failure="Не удалось загрузить встречи. Обновите страницу.">
+        {(meetings) =>
+          meetings.length === 0 ? (
+            <Text>Предстоящих встреч нет</Text>
+          ) : (
+            // The server picks the meetings that have not ended and sorts them: the order is kept.
+            meetings.map((meeting) => <MeetingCard key={meeting.id} meeting={meeting} />)
+          )
+        }
+      </Loaded>
     </Stack>
   );
-}
-
-function MeetingList({ meetings }: { meetings: UpcomingMeetings }) {
-  switch (meetings.status) {
-    case 'loading':
-      return <Loader role="status" aria-label="Загрузка" />;
-    case 'failed':
-      return <Text c="red">Не удалось загрузить встречи. Обновите страницу.</Text>;
-    case 'loaded':
-      if (meetings.meetings.length === 0) return <Text>Предстоящих встреч нет</Text>;
-      // The server picks the meetings that have not ended and sorts them: the order is kept.
-      return meetings.meetings.map((meeting) => <MeetingCard key={meeting.id} meeting={meeting} />);
-  }
 }
 
 function MeetingCard({ meeting }: { meeting: Meeting }) {

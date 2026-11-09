@@ -1,4 +1,4 @@
-import { Anchor, Badge, Button, Grid, Loader, ScrollArea, Stack, Text, Title } from '@mantine/core';
+import { Anchor, Badge, Button, Grid, ScrollArea, Stack, Text, Title } from '@mantine/core';
 import { type ReactNode, useId, useState } from 'react';
 import { Link, useParams } from 'react-router';
 
@@ -13,8 +13,8 @@ import {
 } from '../format.ts';
 import type { Meeting, MeetingType, Slot, SlotDay } from '../generated/index.ts';
 import GuestForm, { type Guest } from '../GuestForm.tsx';
-import { useMeetingType } from '../useMeetingType.ts';
-import { type Slots, useSlots } from '../useSlots.ts';
+import { type Loadable, useMeetingType, useSlotDays } from '../load.ts';
+import Loaded from '../Loaded.tsx';
 
 function MeetingTypePage() {
   const { meetingTypeId = '' } = useParams();
@@ -24,28 +24,27 @@ function MeetingTypePage() {
 
 function MeetingTypeView({ meetingTypeId }: { meetingTypeId: string }) {
   const meetingType = useMeetingType(meetingTypeId);
-  const [slots, reloadSlots] = useSlots(meetingTypeId);
+  const [slotDays, reloadSlots] = useSlotDays(meetingTypeId);
   // The server may stop knowing the meeting type after the page has loaded it.
   const [gone, setGone] = useState(false);
 
   if (gone) return <MeetingTypeNotFound />;
-  switch (meetingType.status) {
-    case 'loading':
-      return <Loader role="status" aria-label="Загрузка" />;
-    case 'failed':
-      return <Text c="red">Не удалось загрузить тип встречи. Обновите страницу.</Text>;
-    case 'notFound':
-      return <MeetingTypeNotFound />;
-    case 'loaded':
-      return (
-        <MeetingTypeColumns
-          meetingType={meetingType.meetingType}
-          slots={slots}
-          reloadSlots={reloadSlots}
-          onNotFound={() => setGone(true)}
-        />
-      );
-  }
+  return (
+    <Loaded state={meetingType} failure="Не удалось загрузить тип встречи. Обновите страницу.">
+      {(found) =>
+        found ? (
+          <MeetingTypeColumns
+            meetingType={found}
+            slotDays={slotDays}
+            reloadSlots={reloadSlots}
+            onNotFound={() => setGone(true)}
+          />
+        ) : (
+          <MeetingTypeNotFound />
+        )
+      }
+    </Loaded>
+  );
 }
 
 function MeetingTypeNotFound() {
@@ -61,7 +60,7 @@ function MeetingTypeNotFound() {
 
 type MeetingTypeColumnsProps = {
   meetingType: MeetingType;
-  slots: Slots;
+  slotDays: Loadable<SlotDay[]>;
   reloadSlots: () => void;
   onNotFound: () => void;
 };
@@ -74,7 +73,7 @@ type MeetingTypeColumnsProps = {
  */
 function MeetingTypeColumns({
   meetingType,
-  slots,
+  slotDays,
   reloadSlots,
   onNotFound,
 }: MeetingTypeColumnsProps) {
@@ -85,7 +84,7 @@ function MeetingTypeColumns({
   /** Why the guest is choosing the time again, until they choose something. */
   const [notice, setNotice] = useState<string | null>(null);
 
-  const days = slots.status === 'loaded' ? slots.days : [];
+  const days = slotDays.status === 'loaded' ? slotDays.data : [];
   // The chosen day while it has slots, otherwise the first day that has some.
   const day =
     days.find(({ date, slots }) => date === chosenDate && slots.length > 0) ??
@@ -104,16 +103,15 @@ function MeetingTypeColumns({
             <Confirmation meeting={meeting} />
           </Grid.Col>
         )}
-        {!meeting && slots.status !== 'loaded' && (
+        {!meeting && slotDays.status !== 'loaded' && (
           <Grid.Col span={{ base: 12, md: 8 }}>
-            {slots.status === 'loading' ? (
-              <Loader role="status" aria-label="Загрузка" />
-            ) : (
-              <Text c="red">Не удалось загрузить свободное время. Обновите страницу.</Text>
-            )}
+            <Loaded
+              state={slotDays}
+              failure="Не удалось загрузить свободное время. Обновите страницу."
+            />
           </Grid.Col>
         )}
-        {!meeting && slots.status === 'loaded' && (
+        {!meeting && slotDays.status === 'loaded' && (
           <>
             <Grid.Col span={{ base: 12, md: 4 }}>
               <DayColumn

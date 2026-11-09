@@ -1,25 +1,15 @@
-import {
-  Anchor,
-  Badge,
-  Button,
-  Card,
-  Group,
-  Loader,
-  Modal,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core';
+import { Anchor, Badge, Button, Card, Group, Modal, Stack, Text, Title } from '@mantine/core';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
 import { formatDuration } from '../format.ts';
 import type { MeetingType } from '../generated/index.ts';
+import { useMeetingTypes } from '../load.ts';
+import Loaded from '../Loaded.tsx';
 import NewMeetingTypeForm from '../NewMeetingTypeForm.tsx';
-import { type MeetingTypes, useMeetingTypes } from '../useMeetingTypes.ts';
 
 function OwnerMeetingTypesPage() {
-  const [meetingTypes, reload] = useMeetingTypes();
+  const [list, reload] = useMeetingTypes();
   const [creating, setCreating] = useState(false);
 
   function handleCreated() {
@@ -33,7 +23,17 @@ function OwnerMeetingTypesPage() {
         <Title order={1}>Типы встреч</Title>
         <Button onClick={() => setCreating(true)}>Создать</Button>
       </Group>
-      <MeetingTypeList meetingTypes={meetingTypes} />
+      <Loaded state={list} failure="Не удалось загрузить типы встреч. Обновите страницу.">
+        {(meetingTypes) =>
+          meetingTypes.length === 0 ? (
+            <Text>Типов встреч пока нет.</Text>
+          ) : (
+            meetingTypes.map((meetingType) => (
+              <MeetingTypeCard key={meetingType.id} meetingType={meetingType} />
+            ))
+          )
+        }
+      </Loaded>
       <Modal
         opened={creating}
         onClose={() => setCreating(false)}
@@ -45,20 +45,6 @@ function OwnerMeetingTypesPage() {
       </Modal>
     </Stack>
   );
-}
-
-function MeetingTypeList({ meetingTypes }: { meetingTypes: MeetingTypes }) {
-  switch (meetingTypes.status) {
-    case 'loading':
-      return <Loader role="status" aria-label="Загрузка" />;
-    case 'failed':
-      return <Text c="red">Не удалось загрузить типы встреч. Обновите страницу.</Text>;
-    case 'loaded':
-      if (meetingTypes.meetingTypes.length === 0) return <Text>Типов встреч пока нет.</Text>;
-      return meetingTypes.meetingTypes.map((meetingType) => (
-        <MeetingTypeCard key={meetingType.id} meetingType={meetingType} />
-      ));
-  }
 }
 
 function MeetingTypeCard({ meetingType }: { meetingType: MeetingType }) {

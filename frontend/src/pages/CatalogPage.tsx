@@ -1,9 +1,10 @@
-import { Badge, Card, Group, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Badge, Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { Link } from 'react-router';
 
 import { formatDuration } from '../format.ts';
 import type { MeetingType } from '../generated/index.ts';
-import { type MeetingTypes, useMeetingTypes } from '../useMeetingTypes.ts';
+import { useMeetingTypes } from '../load.ts';
+import Loaded from '../Loaded.tsx';
 
 function CatalogPage() {
   const [catalog] = useMeetingTypes();
@@ -12,29 +13,21 @@ function CatalogPage() {
     <Stack gap="md">
       <Title order={1}>Выберите тип встречи</Title>
       <Text c="dimmed">Нажмите на карточку, чтобы выбрать день и время.</Text>
-      <CatalogContent catalog={catalog} />
+      <Loaded state={catalog} failure="Не удалось загрузить типы встреч. Обновите страницу.">
+        {(meetingTypes) =>
+          meetingTypes.length === 0 ? (
+            <Text>Владелец ещё не завёл ни одного типа встречи.</Text>
+          ) : (
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              {meetingTypes.map((meetingType) => (
+                <MeetingTypeCard key={meetingType.id} meetingType={meetingType} />
+              ))}
+            </SimpleGrid>
+          )
+        }
+      </Loaded>
     </Stack>
   );
-}
-
-function CatalogContent({ catalog }: { catalog: MeetingTypes }) {
-  switch (catalog.status) {
-    case 'loading':
-      return <Loader role="status" aria-label="Загрузка" />;
-    case 'failed':
-      return <Text c="red">Не удалось загрузить типы встреч. Обновите страницу.</Text>;
-    case 'loaded':
-      if (catalog.meetingTypes.length === 0) {
-        return <Text>Владелец ещё не завёл ни одного типа встречи.</Text>;
-      }
-      return (
-        <SimpleGrid cols={{ base: 1, sm: 2 }}>
-          {catalog.meetingTypes.map((meetingType) => (
-            <MeetingTypeCard key={meetingType.id} meetingType={meetingType} />
-          ))}
-        </SimpleGrid>
-      );
-  }
 }
 
 function MeetingTypeCard({ meetingType }: { meetingType: MeetingType }) {
