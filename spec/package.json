@@ -1,0 +1,13 @@
+{
+  "name": "spec",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsp compile ."
+  },
+  "devDependencies": {
+    "@typespec/compiler": "^1.17.0",
+    "@typespec/http": "^1.17.0",
+    "@typespec/openapi3": "^1.17.0"
+  }
+}
