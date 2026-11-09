@@ -7,7 +7,17 @@ import { type Field, rejectedField } from './rejectedField.ts';
 
 type Duration = MeetingType['durationMinutes'];
 
-const durations: Duration[] = [15, 30, 45, 60, 90, 120];
+// Keyed by every duration of the contract: a new one fails the typecheck until the form offers it.
+const offered: Record<Duration, true> = {
+  15: true,
+  30: true,
+  45: true,
+  60: true,
+  90: true,
+  120: true,
+};
+// Integer keys come in ascending order.
+const durations = Object.keys(offered).map(Number) as Duration[];
 const durationOptions = durations.map((minutes) => ({
   value: String(minutes),
   label: formatDuration(minutes),
