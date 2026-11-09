@@ -3,7 +3,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import openapiGlue from 'fastify-openapi-glue';
 import { fileURLToPath } from 'node:url';
 
-import { createCalendar } from './calendar.ts';
+import { type Clock, createCalendar } from './calendar.ts';
 import { handleError } from './errors.ts';
 import { createHandlers } from './handlers.ts';
 
@@ -11,13 +11,15 @@ const specification = fileURLToPath(new URL('../../spec/generated/openapi.yaml',
 const frontendBuild = fileURLToPath(new URL('../../frontend/dist', import.meta.url));
 
 export type AppOptions = {
+  /** The clock of the time rules, real time by default. API tests pass a fixed one. */
+  now?: Clock;
   /** Serve the frontend build from `frontend/dist`. API tests build the app without it. */
   serveFrontend?: boolean;
 };
 
-export function buildApp({ serveFrontend = false }: AppOptions = {}) {
+export function buildApp({ now = () => new Date(), serveFrontend = false }: AppOptions = {}) {
   const app = Fastify({ logger: process.env.NODE_ENV !== 'test' });
-  const serviceHandlers = createHandlers(createCalendar());
+  const serviceHandlers = createHandlers(createCalendar({ now }));
   app.setErrorHandler(handleError);
   app.register(openapiGlue, { specification, serviceHandlers });
   if (serveFrontend) {

@@ -37,6 +37,25 @@ model NewMeetingType {
   description?: string;
 }
 
+/**
+ * Free time a meeting of the type can start at. The server gives times in Moscow time,
+ * like `2026-11-10T09:00:00+03:00`.
+ */
+model Slot {
+  start: offsetDateTime;
+
+  /** The start plus the duration of the meeting type. */
+  end: offsetDateTime;
+}
+
+/** A day of the booking window, in Moscow time. */
+model SlotDay {
+  date: plainDate;
+
+  /** Slots in start order, empty on weekends and on days with no free time. */
+  slots: Slot[];
+}
+
 /** Why the server refused the request. */
 @error
 model ApiError {
@@ -58,6 +77,12 @@ model ValidationErrorResponse {
   @body error: ApiError;
 }
 
+/** No meeting type has the id from the path. */
+model MeetingTypeNotFoundResponse {
+  @statusCode statusCode: 404;
+  @body error: ApiError;
+}
+
 @route("/api/health")
 @get
 op getHealth(): Health;
@@ -74,3 +99,19 @@ op createMeetingType(@body meetingType: NewMeetingType): {
   @statusCode statusCode: 201;
   @body meetingType: MeetingType;
 } | ValidationErrorResponse;
+
+/** Reads one meeting type. An id that is not a UUID fails validation with `field: meetingTypeId`. */
+@route("/api/meeting-types/{meetingTypeId}")
+@get
+op getMeetingType(@path meetingTypeId: uuid):
+  | MeetingType
+  | ValidationErrorResponse
+  | MeetingTypeNotFoundResponse;
+
+/** Lists the slots of a meeting type for each of the 14 days of the booking window, from tomorrow. */
+@route("/api/meeting-types/{meetingTypeId}/slots")
+@get
+op listSlots(@path meetingTypeId: uuid):
+  | SlotDay[]
+  | ValidationErrorResponse
+  | MeetingTypeNotFoundResponse;

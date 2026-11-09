@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { assert, onTestFinished } from 'vitest';
 import { parse } from 'yaml';
 
-import { buildApp } from '../src/app.ts';
+import { type AppOptions, buildApp } from '../src/app.ts';
 
 type Operation = { operationId: string; responses: Record<string, Response> };
 type Response = { content?: Record<string, unknown> };
@@ -21,9 +21,12 @@ const ajv = new Ajv({ allErrors: true, strict: false });
 addFormats.default(ajv);
 ajv.addSchema(document, documentId);
 
-/** Builds an app with an empty store for the current test and closes it when the test ends. */
-export function buildTestApp(): FastifyInstance {
-  const app = buildApp();
+/**
+ * Builds an app with an empty store for the current test and closes it when the test ends.
+ * A test of the time rules passes a fixed clock `now`, others get real time.
+ */
+export function buildTestApp({ now }: Pick<AppOptions, 'now'> = {}): FastifyInstance {
+  const app = buildApp({ now });
   onTestFinished(() => app.close());
   return app;
 }

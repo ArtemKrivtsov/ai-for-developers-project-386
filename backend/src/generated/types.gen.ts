@@ -49,6 +49,29 @@ export type NewMeetingType = {
     description?: string;
 };
 
+/**
+ * Free time a meeting of the type can start at. The server gives times in Moscow time,
+ * like `2026-11-10T09:00:00+03:00`.
+ */
+export type Slot = {
+    start: string;
+    /**
+     * The start plus the duration of the meeting type.
+     */
+    end: string;
+};
+
+/**
+ * A day of the booking window, in Moscow time.
+ */
+export type SlotDay = {
+    date: string;
+    /**
+     * Slots in start order, empty on weekends and on days with no free time.
+     */
+    slots: Array<Slot>;
+};
+
 export type Uuid = string;
 
 export type GetHealthData = {
@@ -107,3 +130,65 @@ export type CreateMeetingTypeResponses = {
 };
 
 export type CreateMeetingTypeResponse = CreateMeetingTypeResponses[keyof CreateMeetingTypeResponses];
+
+export type GetMeetingTypeData = {
+    body?: never;
+    path: {
+        meetingTypeId: Uuid;
+    };
+    query?: never;
+    url: '/api/meeting-types/{meetingTypeId}';
+};
+
+export type GetMeetingTypeErrors = {
+    /**
+     * The request breaks the contract.
+     */
+    400: ApiError;
+    /**
+     * No meeting type has the id from the path.
+     */
+    404: ApiError;
+};
+
+export type GetMeetingTypeError = GetMeetingTypeErrors[keyof GetMeetingTypeErrors];
+
+export type GetMeetingTypeResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: MeetingType;
+};
+
+export type GetMeetingTypeResponse = GetMeetingTypeResponses[keyof GetMeetingTypeResponses];
+
+export type ListSlotsData = {
+    body?: never;
+    path: {
+        meetingTypeId: Uuid;
+    };
+    query?: never;
+    url: '/api/meeting-types/{meetingTypeId}/slots';
+};
+
+export type ListSlotsErrors = {
+    /**
+     * The request breaks the contract.
+     */
+    400: ApiError;
+    /**
+     * No meeting type has the id from the path.
+     */
+    404: ApiError;
+};
+
+export type ListSlotsError = ListSlotsErrors[keyof ListSlotsErrors];
+
+export type ListSlotsResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: Array<SlotDay>;
+};
+
+export type ListSlotsResponse = ListSlotsResponses[keyof ListSlotsResponses];

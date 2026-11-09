@@ -2,7 +2,7 @@
 
 import { http, type HttpHandler, HttpResponse, type HttpResponseResolver, type RequestHandlerOptions as RequestHandlerOptions2 } from 'msw';
 
-import type { ClientOptions, CreateMeetingTypeData, CreateMeetingTypeResponses, GetHealthResponses, ListMeetingTypesResponses } from './types.gen';
+import type { ClientOptions, CreateMeetingTypeData, CreateMeetingTypeResponses, GetHealthResponses, GetMeetingTypeResponses, ListMeetingTypesResponses, ListSlotsResponses } from './types.gen';
 
 export type RequestHandlerOptions = RequestHandlerOptions2 & {
     baseUrl?: ClientOptions['baseUrl'];
@@ -90,6 +90,68 @@ export function handleCreateMeetingType(response?: HandleCreateMeetingTypeRespon
     }, options);
 }
 
+export type HandleGetMeetingTypeResponse = {
+    body: GetMeetingTypeResponses[200];
+    status?: 200;
+};
+
+/**
+ * Handler for the `GET /api/meeting-types/{meetingTypeId}` operation.
+ */
+export function handleGetMeetingType(response?: HandleGetMeetingTypeResponse | HttpResponseResolver<{
+    meetingTypeId: string;
+}, never>, options?: RequestHandlerOptions): HttpHandler {
+    return http.get<{
+        meetingTypeId: string;
+    }, never>(`${options?.baseUrl ?? '*'}/api/meeting-types/:meetingTypeId`, info => {
+        if (typeof response === 'function') {
+            return response(info);
+        }
+        const body = response?.body;
+        if (body !== undefined) {
+            return HttpResponse.json(body, { status: response?.status ?? 200 });
+        }
+        if (options?.responseFallback === 'passthrough') {
+            return;
+        }
+        return new Response('Not Implemented', {
+            status: 501,
+            statusText: 'Not Implemented'
+        });
+    }, options);
+}
+
+export type HandleListSlotsResponse = {
+    body: ListSlotsResponses[200];
+    status?: 200;
+};
+
+/**
+ * Handler for the `GET /api/meeting-types/{meetingTypeId}/slots` operation.
+ */
+export function handleListSlots(response?: HandleListSlotsResponse | HttpResponseResolver<{
+    meetingTypeId: string;
+}, never>, options?: RequestHandlerOptions): HttpHandler {
+    return http.get<{
+        meetingTypeId: string;
+    }, never>(`${options?.baseUrl ?? '*'}/api/meeting-types/:meetingTypeId/slots`, info => {
+        if (typeof response === 'function') {
+            return response(info);
+        }
+        const body = response?.body;
+        if (body !== undefined) {
+            return HttpResponse.json(body, { status: response?.status ?? 200 });
+        }
+        if (options?.responseFallback === 'passthrough') {
+            return;
+        }
+        return new Response('Not Implemented', {
+            status: 501,
+            statusText: 'Not Implemented'
+        });
+    }, options);
+}
+
 export type MswHandlerFactories = {
     /**
      * Handler for the `GET /api/health` operation.
@@ -103,6 +165,14 @@ export type MswHandlerFactories = {
      * Handler for the `POST /api/meeting-types` operation.
      */
     createMeetingType: typeof handleCreateMeetingType;
+    /**
+     * Handler for the `GET /api/meeting-types/{meetingTypeId}` operation.
+     */
+    getMeetingType: typeof handleGetMeetingType;
+    /**
+     * Handler for the `GET /api/meeting-types/{meetingTypeId}/slots` operation.
+     */
+    listSlots: typeof handleListSlots;
 };
 
 export type CreateMswHandlersResult = {
@@ -122,7 +192,9 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
     const pick: CreateMswHandlersResult['pick'] = {
         getHealth: wrap(handleGetHealth),
         listMeetingTypes: wrap(handleListMeetingTypes),
-        createMeetingType: wrap(handleCreateMeetingType)
+        createMeetingType: wrap(handleCreateMeetingType),
+        getMeetingType: wrap(handleGetMeetingType),
+        listSlots: wrap(handleListSlots)
     };
     const all: CreateMswHandlersResult['all'] = (options = {}) => {
         type OverrideValue<R> = R | [
@@ -134,6 +206,8 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
         }
         const overrides = options.pick ?? {};
         return [
+            invoke(pick.listSlots, overrides.listSlots),
+            invoke(pick.getMeetingType, overrides.getMeetingType),
             invoke(pick.getHealth, overrides.getHealth),
             invoke(pick.listMeetingTypes, overrides.listMeetingTypes),
             invoke(pick.createMeetingType, overrides.createMeetingType)

@@ -144,3 +144,45 @@ test('creating a meeting type from a body that is not JSON fails with a validati
   expect(response.statusCode).toBe(400);
   expect(response.json()).toEqual({ code: 'validation_error', message: expect.any(String) });
 });
+
+test('a meeting type can be read by its id', async () => {
+  const app = buildTestApp();
+  const created = await request(app, {
+    method: 'POST',
+    url: '/api/meeting-types',
+    payload: { name: 'Разбор резюме', description: 'Пройдёмся по резюме.', durationMinutes: 45 },
+  });
+
+  const response = await request(app, {
+    method: 'GET',
+    url: `/api/meeting-types/${created.json().id}`,
+  });
+
+  expect(response.statusCode).toBe(200);
+  expect(response.json()).toEqual(created.json());
+});
+
+test('reading an unknown meeting type fails with meeting_type_not_found', async () => {
+  const app = buildTestApp();
+
+  const response = await request(app, {
+    method: 'GET',
+    url: '/api/meeting-types/5b0e8f2c-3d71-4a96-b8e4-1c2f7a9d6e30',
+  });
+
+  expect(response.statusCode).toBe(404);
+  expect(response.json()).toEqual({ code: 'meeting_type_not_found', message: expect.any(String) });
+});
+
+test('reading a meeting type by an id that is not a UUID fails with a validation error', async () => {
+  const app = buildTestApp();
+
+  const response = await request(app, { method: 'GET', url: '/api/meeting-types/not-a-uuid' });
+
+  expect(response.statusCode).toBe(400);
+  expect(response.json()).toEqual({
+    code: 'validation_error',
+    message: expect.any(String),
+    field: 'meetingTypeId',
+  });
+});
