@@ -11,7 +11,14 @@ exclude = hexlet
 local fast = new Mapping<String, Step> {
   ["oxlint"] = (Builtins.ox_lint) { exclude = List(hexlet, generated) }
   ["oxfmt"] = (Builtins.oxfmt) {
-    exclude = List(hexlet, generated, "**/pnpm-lock.yaml", "**/package-lock.json")
+    exclude = List(
+      hexlet,
+      generated,
+      "**/pnpm-lock.yaml",
+      "**/package-lock.json",
+      // release-please generates CHANGELOG.md and rewrites it on every release.
+      "CHANGELOG.md"
+    )
   }
   ["jactionlint"] = Builtins.jactionlint
 }
