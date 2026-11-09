@@ -6,6 +6,7 @@ import { assert, onTestFinished } from 'vitest';
 import { parse } from 'yaml';
 
 import { type AppOptions, buildApp } from '../src/app.ts';
+import type { MeetingType, NewMeetingType } from '../src/generated/types.gen.ts';
 
 type Operation = { operationId: string; responses: Record<string, Response> };
 type Response = { content?: Record<string, unknown> };
@@ -65,6 +66,39 @@ export async function request(
     `${where}: body does not match the contract: ${ajv.errorsText(validate.errors)}`,
   );
   return response;
+}
+
+/** Monday, 9 November 2026, noon in Moscow: the booking window runs from 10 to 23 November. */
+export const monday = () => new Date('2026-11-09T12:00:00+03:00');
+
+/** Creates a meeting type named «Созвон» for 30 minutes, unless `fields` say otherwise. */
+export async function createMeetingType(
+  app: FastifyInstance,
+  fields: Partial<NewMeetingType> = {},
+): Promise<MeetingType> {
+  const response = await request(app, {
+    method: 'POST',
+    url: '/api/meeting-types',
+    payload: { name: 'Созвон', durationMinutes: 30, ...fields },
+  });
+  assert.strictEqual(response.statusCode, 201, 'the meeting type is not created');
+  return response.json();
+}
+
+/**
+ * Asks for a meeting of the meeting type for Иван Петров, ivan@example.com. `fields` add
+ * the start and may replace the guest or break the body.
+ */
+export function createMeeting(
+  app: FastifyInstance,
+  meetingTypeId: string,
+  fields: Record<string, unknown>,
+) {
+  return request(app, {
+    method: 'POST',
+    url: `/api/meeting-types/${meetingTypeId}/meetings`,
+    payload: { guestName: 'Иван Петров', guestEmail: 'ivan@example.com', ...fields },
+  });
 }
 
 function findOperation(method: string, url: string) {

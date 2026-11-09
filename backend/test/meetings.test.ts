@@ -1,33 +1,15 @@
-import type { FastifyInstance } from 'fastify';
 import { expect, test } from 'vitest';
 
-import { buildTestApp, request } from './api.ts';
+import { buildTestApp, createMeeting, createMeetingType, monday, request } from './api.ts';
 
-/** Monday, 9 November 2026, noon in Moscow: the booking window runs from 10 to 23 November. */
-const monday = () => new Date('2026-11-09T12:00:00+03:00');
-
-async function createMeetingType(app: FastifyInstance, durationMinutes: number) {
-  const response = await request(app, {
-    method: 'POST',
-    url: '/api/meeting-types',
-    payload: { name: 'Созвон', description: 'Обсудим задачу.', durationMinutes },
-  });
-  return response.json();
-}
-
-function book(app: FastifyInstance, meetingTypeId: string, meeting: Record<string, unknown>) {
-  return request(app, {
-    method: 'POST',
-    url: `/api/meeting-types/${meetingTypeId}/meetings`,
-    payload: { guestName: 'Иван Петров', guestEmail: 'ivan@example.com', ...meeting },
-  });
-}
-
-test('a meeting booked on a slot comes back with its whole meeting type and its end', async () => {
+test('a meeting created on a slot comes back with its whole meeting type and its end', async () => {
   const app = buildTestApp({ now: monday });
-  const meetingType = await createMeetingType(app, 60);
+  const meetingType = await createMeetingType(app, {
+    description: 'Обсудим задачу.',
+    durationMinutes: 60,
+  });
 
-  const response = await book(app, meetingType.id, {
+  const response = await createMeeting(app, meetingType.id, {
     start: '2026-11-10T09:30:00+03:00',
     guestName: 'Иван Петров',
     guestEmail: 'Ivan.Petrov@Example.com',
@@ -49,10 +31,10 @@ test('a meeting booked on a slot comes back with its whole meeting type and its 
   });
 });
 
-test('booking a meeting of an unknown meeting type fails with meeting_type_not_found', async () => {
+test('creating a meeting of an unknown meeting type fails with meeting_type_not_found', async () => {
   const app = buildTestApp({ now: monday });
 
-  const response = await book(app, '5b0e8f2c-3d71-4a96-b8e4-1c2f7a9d6e30', {
+  const response = await createMeeting(app, '5b0e8f2c-3d71-4a96-b8e4-1c2f7a9d6e30', {
     start: '2026-11-10T09:00:00+03:00',
   });
 
@@ -64,7 +46,7 @@ test('an unknown meeting type is not found before its start is checked', async (
   const app = buildTestApp({ now: monday });
 
   // Saturday, 14 November: no meeting type has a slot then.
-  const response = await book(app, '5b0e8f2c-3d71-4a96-b8e4-1c2f7a9d6e30', {
+  const response = await createMeeting(app, '5b0e8f2c-3d71-4a96-b8e4-1c2f7a9d6e30', {
     start: '2026-11-14T10:00:00+03:00',
   });
 
@@ -74,9 +56,9 @@ test('an unknown meeting type is not found before its start is checked', async (
 
 test('the server trims spaces around the guest name and keeps the email as it is', async () => {
   const app = buildTestApp({ now: monday });
-  const meetingType = await createMeetingType(app, 30);
+  const meetingType = await createMeetingType(app);
 
-  const response = await book(app, meetingType.id, {
+  const response = await createMeeting(app, meetingType.id, {
     start: '2026-11-10T09:00:00+03:00',
     guestName: ' \tИван Петров \n',
     guestEmail: 'Ivan@Example.COM',
@@ -105,11 +87,11 @@ test.each([
     { guestEmail: `${'a'.repeat(243)}@example.com` },
     'guestEmail',
   ],
-])('booking a meeting fails with a validation error when %s', async (_case, change, field) => {
+])('creating a meeting fails with a validation error when %s', async (_case, change, field) => {
   const app = buildTestApp({ now: monday });
-  const meetingType = await createMeetingType(app, 30);
+  const meetingType = await createMeetingType(app);
 
-  const response = await book(app, meetingType.id, {
+  const response = await createMeeting(app, meetingType.id, {
     start: '2026-11-10T09:00:00+03:00',
     ...change,
   });
@@ -125,10 +107,10 @@ test.each([
     { headers: { 'content-type': 'text/plain' }, payload: '2026-11-10T09:00:00+03:00' },
   ],
 ])(
-  'booking a meeting fails with a validation error without a field when %s',
+  'creating a meeting fails with a validation error without a field when %s',
   async (_case, body) => {
     const app = buildTestApp({ now: monday });
-    const meetingType = await createMeetingType(app, 30);
+    const meetingType = await createMeetingType(app);
 
     const response = await request(app, {
       method: 'POST',
@@ -141,10 +123,10 @@ test.each([
   },
 );
 
-test('booking a meeting of a meeting type id that is not a UUID fails with a validation error', async () => {
+test('creating a meeting of a meeting type id that is not a UUID fails with a validation error', async () => {
   const app = buildTestApp({ now: monday });
 
-  const response = await book(app, 'not-a-uuid', { start: '2026-11-10T09:00:00+03:00' });
+  const response = await createMeeting(app, 'not-a-uuid', { start: '2026-11-10T09:00:00+03:00' });
 
   expect(response.statusCode).toBe(400);
   expect(response.json()).toEqual({
@@ -162,13 +144,13 @@ test.each([
   ['is before the working day', 30, '2026-11-10T08:30:00+03:00'],
   ['leaves a 60-minute meeting ending after 18:00', 60, '2026-11-10T17:30:00+03:00'],
   ['has fractions finer than nanoseconds', 30, '2026-11-10T09:00:00.0000000001+03:00'],
-])(
-  'booking a meeting whose start %s fails with a validation error of start',
+] as const)(
+  'creating a meeting whose start %s fails with a validation error of start',
   async (_case, durationMinutes, start) => {
     const app = buildTestApp({ now: monday });
-    const meetingType = await createMeetingType(app, durationMinutes);
+    const meetingType = await createMeetingType(app, { durationMinutes });
 
-    const response = await book(app, meetingType.id, { start });
+    const response = await createMeeting(app, meetingType.id, { start });
 
     expect(response.statusCode).toBe(400);
     expect(response.json()).toEqual({
@@ -179,13 +161,13 @@ test.each([
   },
 );
 
-test('booking a slot that is already taken fails with a conflict', async () => {
+test('a meeting on a slot that is already taken fails with a conflict', async () => {
   const app = buildTestApp({ now: monday });
-  const meetingType = await createMeetingType(app, 30);
-  const first = await book(app, meetingType.id, { start: '2026-11-10T10:00:00+03:00' });
+  const meetingType = await createMeetingType(app);
+  const first = await createMeeting(app, meetingType.id, { start: '2026-11-10T10:00:00+03:00' });
   expect(first.statusCode).toBe(201);
 
-  const response = await book(app, meetingType.id, {
+  const response = await createMeeting(app, meetingType.id, {
     start: '2026-11-10T10:00:00+03:00',
     guestName: 'Мария Иванова',
     guestEmail: 'maria@example.com',
@@ -195,13 +177,13 @@ test('booking a slot that is already taken fails with a conflict', async () => {
   expect(response.json()).toEqual({ code: 'conflict', message: expect.any(String) });
 });
 
-test('a booked slot is no longer offered by its meeting type or by another one', async () => {
+test('a slot taken by a meeting is no longer offered by its meeting type or by another one', async () => {
   const app = buildTestApp({ now: monday });
-  const booked = await createMeetingType(app, 30);
-  const other = await createMeetingType(app, 30);
-  await book(app, booked.id, { start: '2026-11-10T10:00:00+03:00' });
+  const taken = await createMeetingType(app);
+  const other = await createMeetingType(app);
+  await createMeeting(app, taken.id, { start: '2026-11-10T10:00:00+03:00' });
 
-  for (const meetingType of [booked, other]) {
+  for (const meetingType of [taken, other]) {
     const response = await request(app, {
       method: 'GET',
       url: `/api/meeting-types/${meetingType.id}/slots`,
@@ -217,11 +199,11 @@ test('a booked slot is no longer offered by its meeting type or by another one',
   }
 });
 
-test('a start with another offset books the same moment and comes back in Moscow time', async () => {
+test('a start with another offset takes the same moment and comes back in Moscow time', async () => {
   const app = buildTestApp({ now: monday });
-  const meetingType = await createMeetingType(app, 30);
+  const meetingType = await createMeetingType(app);
 
-  const response = await book(app, meetingType.id, { start: '2026-11-10T06:00:00Z' });
+  const response = await createMeeting(app, meetingType.id, { start: '2026-11-10T06:00:00Z' });
 
   expect(response.statusCode).toBe(201);
   expect(response.json()).toMatchObject({

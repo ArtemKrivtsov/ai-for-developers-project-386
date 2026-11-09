@@ -1,23 +1,10 @@
-import type { FastifyInstance } from 'fastify';
 import { expect, test } from 'vitest';
 
-import { buildTestApp, request } from './api.ts';
-
-/** Monday, 9 November 2026, noon in Moscow: the booking window runs from 10 to 23 November. */
-const monday = () => new Date('2026-11-09T12:00:00+03:00');
-
-async function createMeetingType(app: FastifyInstance, durationMinutes: number) {
-  const response = await request(app, {
-    method: 'POST',
-    url: '/api/meeting-types',
-    payload: { name: 'Созвон', durationMinutes },
-  });
-  return response.json().id as string;
-}
+import { buildTestApp, createMeetingType, monday, request } from './api.ts';
 
 test('slots cover 14 days from tomorrow, and weekends have none', async () => {
   const app = buildTestApp({ now: monday });
-  const id = await createMeetingType(app, 30);
+  const { id } = await createMeetingType(app);
 
   const response = await request(app, { method: 'GET', url: `/api/meeting-types/${id}/slots` });
 
@@ -46,7 +33,7 @@ test('slots cover 14 days from tomorrow, and weekends have none', async () => {
 test('the booking window starts the day after the Moscow date, not the UTC one', async () => {
   // 22:30 UTC on Monday is already 01:30 on Tuesday in Moscow.
   const app = buildTestApp({ now: () => new Date('2026-11-09T22:30:00Z') });
-  const id = await createMeetingType(app, 30);
+  const { id } = await createMeetingType(app);
 
   const response = await request(app, { method: 'GET', url: `/api/meeting-types/${id}/slots` });
 
@@ -57,7 +44,7 @@ test('the booking window starts the day after the Moscow date, not the UTC one',
 
 test('a 30-minute meeting type has 18 slots on a working day, from 09:00 every 30 minutes', async () => {
   const app = buildTestApp({ now: monday });
-  const id = await createMeetingType(app, 30);
+  const { id } = await createMeetingType(app);
 
   const response = await request(app, { method: 'GET', url: `/api/meeting-types/${id}/slots` });
 
@@ -93,11 +80,11 @@ test.each([
   [30, '09:30', { start: '2026-11-10T17:30:00+03:00', end: '2026-11-10T18:00:00+03:00' }],
   [60, '10:00', { start: '2026-11-10T17:00:00+03:00', end: '2026-11-10T18:00:00+03:00' }],
   [120, '11:00', { start: '2026-11-10T16:00:00+03:00', end: '2026-11-10T18:00:00+03:00' }],
-])(
+] as const)(
   'a %i-minute meeting type gets slots every 30 minutes, ending at %s first and at 18:00 last',
   async (durationMinutes, firstEnd, lastSlot) => {
     const app = buildTestApp({ now: monday });
-    const id = await createMeetingType(app, durationMinutes);
+    const { id } = await createMeetingType(app, { durationMinutes });
 
     const response = await request(app, {
       method: 'GET',
