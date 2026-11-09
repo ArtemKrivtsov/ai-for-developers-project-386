@@ -168,3 +168,11 @@ op createMeeting(@path meetingTypeId: uuid, @body meeting: NewMeeting):
   | ValidationErrorResponse
   | MeetingTypeNotFoundResponse
   | ConflictResponse;
+
+/**
+ * Lists upcoming meetings of every meeting type, nearest first. A meeting is upcoming until
+ * it ends, so one that is going on now is in the list.
+ */
+@route("/api/meetings")
+@get
+op listUpcomingMeetings(): Meeting[];

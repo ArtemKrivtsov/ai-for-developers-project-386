@@ -27,6 +27,8 @@ export type Calendar = {
    * then checked against the meetings of every meeting type.
    */
   createMeeting(meetingTypeId: string, meeting: NewMeeting): CreateMeetingResult;
+  /** Meetings of every meeting type that end after `now`, nearest first. */
+  listUpcomingMeetings(): Meeting[];
 };
 
 export type CreateMeetingResult =
@@ -129,6 +131,14 @@ export function createCalendar({ now }: { now: Clock }): Calendar {
     return { status: 'created', meeting };
   }
 
+  /** A meeting is upcoming until it ends, so the one going on now is in the list. */
+  function listUpcomingMeetings() {
+    const current = now().toISOString();
+    return meetings
+      .filter((meeting) => isEarlier(current, meeting.end))
+      .sort((a, b) => compareMoments(a.start, b.start));
+  }
+
   starterMeetingTypes.forEach(createMeetingType);
 
   return {
@@ -137,6 +147,7 @@ export function createCalendar({ now }: { now: Clock }): Calendar {
     getMeetingType,
     listSlots,
     createMeeting,
+    listUpcomingMeetings,
   };
 }
 
@@ -185,9 +196,14 @@ function momentOf(dateTime: string): Temporal.Instant | undefined {
   }
 }
 
-/** Compares two offset date-times as moments, whatever their offsets. */
+/** Whether one offset date-time is earlier than another as a moment, whatever their offsets. */
 function isEarlier(a: string, b: string) {
-  return Temporal.Instant.compare(Temporal.Instant.from(a), Temporal.Instant.from(b)) < 0;
+  return compareMoments(a, b) < 0;
+}
+
+/** Compares two offset date-times as moments, whatever their offsets. */
+function compareMoments(a: string, b: string) {
+  return Temporal.Instant.compare(Temporal.Instant.from(a), Temporal.Instant.from(b));
 }
 
 /** Like `2026-11-10T09:00:00+03:00`: the offset without the zone name. */

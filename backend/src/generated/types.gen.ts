@@ -255,3 +255,19 @@ export type ListSlotsResponses = {
 };
 
 export type ListSlotsResponse = ListSlotsResponses[keyof ListSlotsResponses];
+
+export type ListUpcomingMeetingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/meetings';
+};
+
+export type ListUpcomingMeetingsResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: Array<Meeting>;
+};
+
+export type ListUpcomingMeetingsResponse = ListUpcomingMeetingsResponses[keyof ListUpcomingMeetingsResponses];
