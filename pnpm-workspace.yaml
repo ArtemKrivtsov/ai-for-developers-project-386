@@ -2,3 +2,4 @@ packages:
   - spec
   - backend
   - frontend
+  - e2e

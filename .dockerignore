@@ -1,0 +1,8 @@
+# The image installs dependencies and builds the frontend itself.
+**/node_modules
+**/dist
+.git
+# What a failed browser test leaves behind.
+**/test-results
+# Agents' worktrees live inside the main checkout, each with its own node_modules.
+.claude

@@ -4,9 +4,103 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
+/**
+ * Why the server refused the request.
+ */
+export type ApiError = {
+    code: 'validation_error' | 'meeting_type_not_found' | 'conflict';
+    /**
+     * An explanation in English for developers, not meant for the user interface.
+     */
+    message: string;
+    /**
+     * The first field that failed validation: a body property or a path parameter.
+     * Only `validation_error` has it, and not when the body is not valid JSON.
+     */
+    field?: string;
+};
+
 export type Health = {
     status: 'ok';
 };
+
+/**
+ * A guest's meeting with the owner. Times are Moscow time, like `2026-11-10T09:00:00+03:00`.
+ */
+export type Meeting = {
+    id: Uuid;
+    /**
+     * The whole meeting type, so a list of meetings needs no more requests.
+     */
+    meetingType: MeetingType;
+    start: string;
+    /**
+     * The start plus the duration of the meeting type.
+     */
+    end: string;
+    guestName: string;
+    guestEmail: string;
+};
+
+/**
+ * A kind of meeting the owner offers to guests.
+ */
+export type MeetingType = {
+    id: Uuid;
+    name: string;
+    /**
+     * An empty string means the meeting type has no description.
+     */
+    description: string;
+    durationMinutes: 15 | 30 | 45 | 60 | 90 | 120;
+};
+
+/**
+ * What the guest fills in to get a meeting. `start` is compared with the slots as a moment, so
+ * any offset works. The server trims `guestName` and keeps `guestEmail` as it is.
+ */
+export type NewMeeting = {
+    start: string;
+    guestName: string;
+    guestEmail: string;
+};
+
+/**
+ * What the owner fills in to create a meeting type. The server trims `name` and `description`.
+ */
+export type NewMeetingType = {
+    name: string;
+    durationMinutes: 15 | 30 | 45 | 60 | 90 | 120;
+    /**
+     * Omitted or empty when the meeting type has no description.
+     */
+    description?: string;
+};
+
+/**
+ * Free time a meeting of the type can start at. The server gives times in Moscow time,
+ * like `2026-11-10T09:00:00+03:00`.
+ */
+export type Slot = {
+    start: string;
+    /**
+     * The start plus the duration of the meeting type.
+     */
+    end: string;
+};
+
+/**
+ * A day of the booking window, in Moscow time.
+ */
+export type SlotDay = {
+    date: string;
+    /**
+     * Slots in start order, empty on weekends and on days with no free time.
+     */
+    slots: Array<Slot>;
+};
+
+export type Uuid = string;
 
 export type GetHealthData = {
     body?: never;
@@ -23,3 +117,157 @@ export type GetHealthResponses = {
 };
 
 export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
+
+export type ListMeetingTypesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/meeting-types';
+};
+
+export type ListMeetingTypesResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: Array<MeetingType>;
+};
+
+export type ListMeetingTypesResponse = ListMeetingTypesResponses[keyof ListMeetingTypesResponses];
+
+export type CreateMeetingTypeData = {
+    body: NewMeetingType;
+    path?: never;
+    query?: never;
+    url: '/api/meeting-types';
+};
+
+export type CreateMeetingTypeErrors = {
+    /**
+     * The request breaks the contract.
+     */
+    400: ApiError;
+};
+
+export type CreateMeetingTypeError = CreateMeetingTypeErrors[keyof CreateMeetingTypeErrors];
+
+export type CreateMeetingTypeResponses = {
+    /**
+     * The request has succeeded and a new resource has been created as a result.
+     */
+    201: MeetingType;
+};
+
+export type CreateMeetingTypeResponse = CreateMeetingTypeResponses[keyof CreateMeetingTypeResponses];
+
+export type GetMeetingTypeData = {
+    body?: never;
+    path: {
+        meetingTypeId: Uuid;
+    };
+    query?: never;
+    url: '/api/meeting-types/{meetingTypeId}';
+};
+
+export type GetMeetingTypeErrors = {
+    /**
+     * The request breaks the contract.
+     */
+    400: ApiError;
+    /**
+     * No meeting type has the id from the path.
+     */
+    404: ApiError;
+};
+
+export type GetMeetingTypeError = GetMeetingTypeErrors[keyof GetMeetingTypeErrors];
+
+export type GetMeetingTypeResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: MeetingType;
+};
+
+export type GetMeetingTypeResponse = GetMeetingTypeResponses[keyof GetMeetingTypeResponses];
+
+export type CreateMeetingData = {
+    body: NewMeeting;
+    path: {
+        meetingTypeId: Uuid;
+    };
+    query?: never;
+    url: '/api/meeting-types/{meetingTypeId}/meetings';
+};
+
+export type CreateMeetingErrors = {
+    /**
+     * The request breaks the contract.
+     */
+    400: ApiError;
+    /**
+     * No meeting type has the id from the path.
+     */
+    404: ApiError;
+    /**
+     * The time overlaps a meeting that already exists.
+     */
+    409: ApiError;
+};
+
+export type CreateMeetingError = CreateMeetingErrors[keyof CreateMeetingErrors];
+
+export type CreateMeetingResponses = {
+    /**
+     * The request has succeeded and a new resource has been created as a result.
+     */
+    201: Meeting;
+};
+
+export type CreateMeetingResponse = CreateMeetingResponses[keyof CreateMeetingResponses];
+
+export type ListSlotsData = {
+    body?: never;
+    path: {
+        meetingTypeId: Uuid;
+    };
+    query?: never;
+    url: '/api/meeting-types/{meetingTypeId}/slots';
+};
+
+export type ListSlotsErrors = {
+    /**
+     * The request breaks the contract.
+     */
+    400: ApiError;
+    /**
+     * No meeting type has the id from the path.
+     */
+    404: ApiError;
+};
+
+export type ListSlotsError = ListSlotsErrors[keyof ListSlotsErrors];
+
+export type ListSlotsResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: Array<SlotDay>;
+};
+
+export type ListSlotsResponse = ListSlotsResponses[keyof ListSlotsResponses];
+
+export type ListUpcomingMeetingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/meetings';
+};
+
+export type ListUpcomingMeetingsResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: Array<Meeting>;
+};
+
+export type ListUpcomingMeetingsResponse = ListUpcomingMeetingsResponses[keyof ListUpcomingMeetingsResponses];

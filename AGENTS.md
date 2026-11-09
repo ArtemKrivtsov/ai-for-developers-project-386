@@ -4,13 +4,14 @@
 
 ## Команды
 
-- `mise trust && mise install && mise run setup`: инструменты, зависимости и git-хуки.
+- `mise trust && mise install && mise run setup`: инструменты, зависимости, Chromium для браузерных тестов и git-хуки.
 - `mise daemons start` / `stop` / `logs`: бэкенд на :3000 и фронтенд на :5173, фронтенд проксирует `/api` на бэкенд.
 - `mise run generate`: после правки `spec/main.tsp` пересобирает OpenAPI, типы маршрутов бэкенда и SDK фронтенда.
-- `mise run lint`, `mise run test`: линтеры и тесты по отдельности.
+- `mise run lint`, `mise run test`: линтеры и тесты по отдельности. В `mise run test` входят API- и компонентные тесты, браузерные запускает шаг `e2e`.
 - `pnpm --dir backend exec vitest run test/health.test.ts -t "<имя теста>"`: один тест, во фронтенде так же через `--dir frontend`.
-- `hk check --all -S <step>`: один шаг проверок (`oxlint`, `oxfmt`, `jactionlint`, `generated`, `typecheck`, `test`, `build`).
-- `mise run check`: все проверки, тот же набор запускает CI и pre-push. Изменение готово, когда команда зелёная.
+- `pnpm --dir e2e exec playwright test -g "<имя теста>"`: один браузерный тест. Playwright сам собирает фронтенд и запускает сервер на свободном порту.
+- `hk check --all -S <step>`: один шаг проверок (`oxlint`, `oxfmt`, `jactionlint`, `generated`, `typecheck`, `test`, `build`, `e2e`, `image`).
+- `mise run check`: все проверки, тот же набор запускает CI и pre-push. Нужен запущенный Docker: шаг `image` собирает образ и проверяет контейнер. Изменение готово, когда команда зелёная.
 - `mise run fix`: автоисправления линтеров и форматтера.
 
 ## Устройство
@@ -19,6 +20,8 @@ API идёт от контракта: `spec/main.tsp` → `mise run generate` �
 
 - `backend/`: Fastify. fastify-openapi-glue при старте читает `spec/generated/openapi.yaml` и сам строит маршруты и валидацию запросов. Обработчики лежат в `src/handlers.ts` под ключами `operationId` и типизированы сгенерированным `RouteHandlers`, поэтому новая операция в контракте без обработчика валит typecheck. Node запускает TypeScript напрямую, без сборки: относительные импорты пишем с расширением `.ts`, синтаксис только стираемый (без `enum` и `namespace`).
 - `frontend/`: React, Vite и Mantine, маршруты на React Router в декларативном режиме. К API обращается только через функции SDK из `src/generated`. Тесты рендерят `App` в `MemoryRouter` по нужному адресу и проверяют страницу через Testing Library.
+- `e2e/`: браузерный сценарий на Playwright, только Chromium, без подмены ответов API. `webServer` собирает фронтенд и запускает `backend/src/server.ts` с `PORT=0`, адрес берёт из лога сервера. Сервер один на весь прогон, сбрасывать его нечем, поэтому тест заводит тип встречи с уникальным именем и ищет свою встречу по уникальному имени гостя. Имена элементов страниц те же, что в компонентных тестах `frontend/test/`.
+- `Dockerfile`: один образ на приложение. Точка входа `backend/src/server.ts` отдаёт API и сборку фронтенда, на прочие GET вне `/api/` отвечает `index.html`. Итоговая стадия повторяет раскладку репозитория: сервер находит контракт и сборку относительно своих модулей, поэтому новый файл, который сервер читает при работе, надо скопировать в образ.
 
 ## Правила
 

@@ -11,7 +11,14 @@ exclude = hexlet
 local fast = new Mapping<String, Step> {
   ["oxlint"] = (Builtins.ox_lint) { exclude = List(hexlet, generated) }
   ["oxfmt"] = (Builtins.oxfmt) {
-    exclude = List(hexlet, generated, "**/pnpm-lock.yaml", "**/package-lock.json")
+    exclude = List(
+      hexlet,
+      generated,
+      "**/pnpm-lock.yaml",
+      "**/package-lock.json",
+      // release-please generates CHANGELOG.md and rewrites it on every release.
+      "CHANGELOG.md"
+    )
   }
   ["jactionlint"] = Builtins.jactionlint
 }
@@ -35,6 +42,28 @@ local all = (fast) {
   ["build"] {
     glob = List("frontend/**", "spec/**", "pnpm-lock.yaml")
     check = "pnpm --dir frontend build"
+  }
+  // Needs Chromium from `mise run setup`. Playwright builds the frontend into frontend/dist too,
+  // so the step waits for "build" instead of racing it.
+  ["e2e"] {
+    glob = List("backend/**", "frontend/**", "spec/**", "e2e/**", "pnpm-lock.yaml")
+    depends = "build"
+    check = "pnpm --dir e2e exec playwright test"
+  }
+  // Needs Docker: builds the image and checks the running container.
+  ["image"] {
+    glob = List(
+      "Dockerfile",
+      ".dockerignore",
+      "scripts/check-image.sh",
+      "backend/**",
+      "frontend/**",
+      "spec/**",
+      "package.json",
+      "pnpm-lock.yaml",
+      "pnpm-workspace.yaml"
+    )
+    check = "scripts/check-image.sh"
   }
 }
 

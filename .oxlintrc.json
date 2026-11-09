@@ -3,5 +3,17 @@
   "rules": {
     "react/rules-of-hooks": "error",
     "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["frontend/src/**"],
+      "rules": {
+        "no-restricted-globals": [
+          "error",
+          { "name": "fetch", "message": "ходи в API через SDK из `src/generated`" },
+          { "name": "XMLHttpRequest", "message": "ходи в API через SDK из `src/generated`" }
+        ]
+      }
+    }
+  ]
 }

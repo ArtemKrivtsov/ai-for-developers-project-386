@@ -1,13 +1,11 @@
-import { afterAll, expect, test } from 'vitest';
+import { expect, test } from 'vitest';
 
-import { buildApp } from '../src/app.ts';
-
-const app = buildApp();
-
-afterAll(() => app.close());
+import { buildTestApp, request } from './api.ts';
 
 test('GET /api/health responds ok', async () => {
-  const response = await app.inject({ method: 'GET', url: '/api/health' });
+  const app = buildTestApp();
+
+  const response = await request(app, { method: 'GET', url: '/api/health' });
 
   expect(response.statusCode).toBe(200);
   expect(response.json()).toEqual({ status: 'ok' });

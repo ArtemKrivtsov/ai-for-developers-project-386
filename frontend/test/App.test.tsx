@@ -1,21 +1,10 @@
-import { MantineProvider } from '@mantine/core';
-import { render, screen, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
 import { expect, test } from 'vitest';
 
-import App from '../src/App.tsx';
-import { theme } from '../src/theme.ts';
-
-function renderAt(path: string) {
-  render(
-    <MantineProvider theme={theme} env="test">
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-      </MemoryRouter>
-    </MantineProvider>,
-  );
-}
+import { handleListMeetingTypes } from '../src/generated/msw.gen.ts';
+import { server } from './msw.ts';
+import { renderAt } from './render.tsx';
 
 test('home page shows the service name and the «Записаться» button', () => {
   renderAt('/');
@@ -27,6 +16,7 @@ test('home page shows the service name and the «Записаться» button',
 });
 
 test('the «Записаться» button opens the meeting type catalog', async () => {
+  server.use(handleListMeetingTypes({ body: [] }));
   renderAt('/');
 
   await userEvent.click(within(screen.getByRole('main')).getByRole('link', { name: 'Записаться' }));
@@ -34,6 +24,38 @@ test('the «Записаться» button opens the meeting type catalog', async
   expect(
     screen.getByRole('heading', { level: 1, name: 'Выберите тип встречи' }),
   ).toBeInTheDocument();
+});
+
+test('the header links to the catalog and to the owner pages', () => {
+  renderAt('/');
+
+  const header = screen.getByRole('banner');
+  expect(within(header).getByRole('link', { name: 'Записаться' })).toHaveAttribute('href', '/book');
+  const owner = within(header).getByRole('link', { name: 'Владельцу' });
+  expect(owner).toHaveAttribute('href', '/owner');
+  expect(owner).not.toHaveAttribute('aria-current');
+});
+
+test('the header highlights «Владельцу» on the owner pages', async () => {
+  server.use(handleListMeetingTypes({ body: [] }));
+
+  renderAt('/owner/types');
+
+  expect(
+    within(screen.getByRole('banner')).getByRole('link', { name: 'Владельцу' }),
+  ).toHaveAttribute('aria-current', 'page');
+  await screen.findByText('Типов встреч пока нет.');
+});
+
+test('the header does not highlight «Владельцу» on an unknown address inside /owner', () => {
+  renderAt('/owner/no-such-page');
+
+  expect(
+    screen.getByRole('heading', { level: 1, name: 'Страница не найдена' }),
+  ).toBeInTheDocument();
+  expect(
+    within(screen.getByRole('banner')).getByRole('link', { name: 'Владельцу' }),
+  ).not.toHaveAttribute('aria-current');
 });
 
 test('an unknown address shows the not-found page with a link home', () => {

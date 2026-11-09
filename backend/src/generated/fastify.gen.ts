@@ -2,10 +2,33 @@
 
 import type { RouteHandler } from 'fastify';
 
-import type { GetHealthResponses } from './types.gen.ts';
+import type { CreateMeetingData, CreateMeetingErrors, CreateMeetingResponses, CreateMeetingTypeData, CreateMeetingTypeErrors, CreateMeetingTypeResponses, GetHealthResponses, GetMeetingTypeData, GetMeetingTypeErrors, GetMeetingTypeResponses, ListMeetingTypesResponses, ListSlotsData, ListSlotsErrors, ListSlotsResponses, ListUpcomingMeetingsResponses } from './types.gen.ts';
 
 export type RouteHandlers = {
     getHealth: RouteHandler<{
         Reply: GetHealthResponses;
+    }>;
+    listMeetingTypes: RouteHandler<{
+        Reply: ListMeetingTypesResponses;
+    }>;
+    createMeetingType: RouteHandler<{
+        Body: CreateMeetingTypeData['body'];
+        Reply: CreateMeetingTypeErrors & CreateMeetingTypeResponses;
+    }>;
+    getMeetingType: RouteHandler<{
+        Params: GetMeetingTypeData['path'];
+        Reply: GetMeetingTypeErrors & GetMeetingTypeResponses;
+    }>;
+    createMeeting: RouteHandler<{
+        Body: CreateMeetingData['body'];
+        Params: CreateMeetingData['path'];
+        Reply: CreateMeetingErrors & CreateMeetingResponses;
+    }>;
+    listSlots: RouteHandler<{
+        Params: ListSlotsData['path'];
+        Reply: ListSlotsErrors & ListSlotsResponses;
+    }>;
+    listUpcomingMeetings: RouteHandler<{
+        Reply: ListUpcomingMeetingsResponses;
     }>;
 };
