@@ -1,0 +1,6 @@
+# The image installs dependencies and builds the frontend itself.
+**/node_modules
+**/dist
+.git
+# Agents' worktrees live inside the main checkout, each with its own node_modules.
+.claude

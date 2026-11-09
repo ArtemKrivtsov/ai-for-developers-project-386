@@ -1,0 +1,23 @@
+name: release-please
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Labels on the release PR need issues: write, see the release-please-action README.
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      # Runs with the default GITHUB_TOKEN: the release PR and tags it pushes trigger no workflows.
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
