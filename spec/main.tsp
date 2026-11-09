@@ -56,6 +56,37 @@ model SlotDay {
   slots: Slot[];
 }
 
+/** A guest's meeting with the owner. Times are Moscow time, like `2026-11-10T09:00:00+03:00`. */
+model Meeting {
+  id: uuid;
+
+  /** The whole meeting type, so a list of meetings needs no more requests. */
+  meetingType: MeetingType;
+
+  start: offsetDateTime;
+
+  /** The start plus the duration of the meeting type. */
+  end: offsetDateTime;
+
+  @minLength(1)
+  @maxLength(100)
+  @pattern("\\S")
+  guestName: string;
+
+  @maxLength(254)
+  @format("email")
+  guestEmail: string;
+}
+
+/**
+ * What the guest fills in to book a meeting. `start` is compared with the slots as a moment, so
+ * any offset works. The server trims `guestName` and keeps `guestEmail` as it is.
+ */
+model NewMeeting {
+  start: offsetDateTime;
+  ...PickProperties<Meeting, "guestName" | "guestEmail">;
+}
+
 /** Why the server refused the request. */
 @error
 model ApiError {
@@ -80,6 +111,12 @@ model ValidationErrorResponse {
 /** No meeting type has the id from the path. */
 model MeetingTypeNotFoundResponse {
   @statusCode statusCode: 404;
+  @body error: ApiError;
+}
+
+/** The time overlaps a meeting that already exists. */
+model ConflictResponse {
+  @statusCode statusCode: 409;
   @body error: ApiError;
 }
 
@@ -115,3 +152,19 @@ op listSlots(@path meetingTypeId: uuid):
   | SlotDay[]
   | ValidationErrorResponse
   | MeetingTypeNotFoundResponse;
+
+/**
+ * Books a meeting of the type. `start` must be one of the slots the server would list for it
+ * right now. A start that no slot has even without other meetings fails validation with
+ * `field: start`, and a start whose slot overlaps another meeting gets `conflict`.
+ */
+@route("/api/meeting-types/{meetingTypeId}/meetings")
+@post
+op createMeeting(@path meetingTypeId: uuid, @body meeting: NewMeeting):
+  | {
+      @statusCode statusCode: 201;
+      @body meeting: Meeting;
+    }
+  | ValidationErrorResponse
+  | MeetingTypeNotFoundResponse
+  | ConflictResponse;

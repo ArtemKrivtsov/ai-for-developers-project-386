@@ -1,6 +1,13 @@
 import { randomUUID } from 'node:crypto';
 
-import type { MeetingType, NewMeetingType, Slot, SlotDay } from './generated/types.gen.ts';
+import type {
+  Meeting,
+  MeetingType,
+  NewMeeting,
+  NewMeetingType,
+  Slot,
+  SlotDay,
+} from './generated/types.gen.ts';
 
 /** Tells the current moment. The app passes real time, tests pass a fixed one. */
 export type Clock = () => Date;
@@ -14,7 +21,21 @@ export type Calendar = {
   getMeetingType(id: string): MeetingType | undefined;
   /** Slots of the meeting type for each day of the booking window, or nothing for an unknown id. */
   listSlots(meetingTypeId: string): SlotDay[] | undefined;
+  /**
+   * Books a meeting of the meeting type for the guest. The start must be one of the slots
+   * `listSlots` would give right now: first it is looked up among the slots ignoring meetings,
+   * then checked against the meetings of every meeting type.
+   */
+  createMeeting(meetingTypeId: string, meeting: NewMeeting): CreateMeetingResult;
 };
+
+export type CreateMeetingResult =
+  | { status: 'created'; meeting: Meeting }
+  | { status: 'meetingTypeNotFound' }
+  /** No slot of the booking window starts then, even before meetings take any. */
+  | { status: 'outsideSlots' }
+  /** The slot overlaps a meeting of some meeting type. */
+  | { status: 'conflict' };
 
 // The owner's time rules. They are fixed: no environment variables and no settings in the UI.
 /** The owner's time zone, UTC+3 all year round. The container's own time zone is never used. */
@@ -49,6 +70,8 @@ const starterMeetingTypes: NewMeetingType[] = [
  */
 export function createCalendar({ now }: { now: Clock }): Calendar {
   const meetingTypes: MeetingType[] = [];
+  /** Meetings of every meeting type in booking order. */
+  const meetings: Meeting[] = [];
 
   function createMeetingType({ name, description, durationMinutes }: NewMeetingType) {
     const meetingType: MeetingType = {
@@ -70,8 +93,40 @@ export function createCalendar({ now }: { now: Clock }): Calendar {
     if (!meetingType) return undefined;
     return bookingWindow(now()).map((date) => ({
       date: date.toString(),
-      slots: slotsOn(date, meetingType.durationMinutes),
+      slots: slotsOn(date, meetingType.durationMinutes).filter(isFree),
     }));
+  }
+
+  /** Whether the slot overlaps no meeting of any meeting type. */
+  function isFree(slot: Slot) {
+    return !meetings.some((meeting) => overlaps(slot, meeting));
+  }
+
+  // Synchronous on purpose (ADR 0003): with no `await` between checking the slot and saving
+  // the meeting, a concurrent request cannot take the time in between and sees this meeting.
+  function createMeeting(
+    meetingTypeId: string,
+    { start, guestName, guestEmail }: NewMeeting,
+  ): CreateMeetingResult {
+    const meetingType = getMeetingType(meetingTypeId);
+    if (!meetingType) return { status: 'meetingTypeNotFound' };
+    const moment = momentOf(start);
+    const slot = bookingWindow(now())
+      .flatMap((date) => slotsOn(date, meetingType.durationMinutes))
+      .find((candidate) => moment?.equals(Temporal.Instant.from(candidate.start)));
+    if (!slot) return { status: 'outsideSlots' };
+    if (!isFree(slot)) return { status: 'conflict' };
+
+    const meeting: Meeting = {
+      id: randomUUID(),
+      meetingType,
+      start: slot.start,
+      end: slot.end,
+      guestName: guestName.trim(),
+      guestEmail,
+    };
+    meetings.push(meeting);
+    return { status: 'created', meeting };
   }
 
   starterMeetingTypes.forEach(createMeetingType);
@@ -81,6 +136,7 @@ export function createCalendar({ now }: { now: Clock }): Calendar {
     createMeetingType,
     getMeetingType,
     listSlots,
+    createMeeting,
   };
 }
 
@@ -106,6 +162,32 @@ function slotsOn(date: Temporal.PlainDate, durationMinutes: number): Slot[] {
     end = start.add({ minutes: durationMinutes });
   }
   return slots;
+}
+
+/**
+ * Whether two times share any moment. They are half-open, `[start, end)`, so a meeting may start
+ * exactly when another one ends.
+ */
+function overlaps(a: Slot, b: Slot) {
+  return isEarlier(a.start, b.end) && isEarlier(b.start, a.end);
+}
+
+/**
+ * The moment of a date-time from a request. The contract's `date-time` format admits a few
+ * strings Temporal cannot read, such as fractions finer than nanoseconds: they name no moment.
+ */
+function momentOf(dateTime: string): Temporal.Instant | undefined {
+  try {
+    return Temporal.Instant.from(dateTime);
+  } catch (error) {
+    if (error instanceof RangeError) return undefined;
+    throw error;
+  }
+}
+
+/** Compares two offset date-times as moments, whatever their offsets. */
+function isEarlier(a: string, b: string) {
+  return Temporal.Instant.compare(Temporal.Instant.from(a), Temporal.Instant.from(b)) < 0;
 }
 
 /** Like `2026-11-10T09:00:00+03:00`: the offset without the zone name. */

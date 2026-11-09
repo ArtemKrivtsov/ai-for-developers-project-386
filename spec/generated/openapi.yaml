@@ -81,6 +81,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
+  /api/meeting-types/{meetingTypeId}/meetings:
+    post:
+      operationId: createMeeting
+      description: |-
+        Books a meeting of the type. `start` must be one of the slots the server would list for it
+        right now. A start that no slot has even without other meetings fails validation with
+        `field: start`, and a start whose slot overlaps another meeting gets `conflict`.
+      parameters:
+        - name: meetingTypeId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/uuid'
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meeting'
+        '400':
+          description: The request breaks the contract.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: No meeting type has the id from the path.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: The time overlaps a meeting that already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewMeeting'
   /api/meeting-types/{meetingTypeId}/slots:
     get:
       operationId: listSlots
@@ -144,6 +188,39 @@ components:
           type: string
           enum:
             - ok
+    Meeting:
+      type: object
+      required:
+        - id
+        - meetingType
+        - start
+        - end
+        - guestName
+        - guestEmail
+      properties:
+        id:
+          $ref: '#/components/schemas/uuid'
+        meetingType:
+          allOf:
+            - $ref: '#/components/schemas/MeetingType'
+          description: The whole meeting type, so a list of meetings needs no more requests.
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+          description: The start plus the duration of the meeting type.
+        guestName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: \S
+        guestEmail:
+          type: string
+          maxLength: 254
+          format: email
+      description: A guest's meeting with the owner. Times are Moscow time, like `2026-11-10T09:00:00+03:00`.
     MeetingType:
       type: object
       required:
@@ -173,6 +250,28 @@ components:
             - 90
             - 120
       description: A kind of meeting the owner offers to guests.
+    NewMeeting:
+      type: object
+      required:
+        - start
+        - guestName
+        - guestEmail
+      properties:
+        start:
+          type: string
+          format: date-time
+        guestName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: \S
+        guestEmail:
+          type: string
+          maxLength: 254
+          format: email
+      description: |-
+        What the guest fills in to book a meeting. `start` is compared with the slots as a moment, so
+        any offset works. The server trims `guestName` and keeps `guestEmail` as it is.
     NewMeetingType:
       type: object
       required:

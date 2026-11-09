@@ -2,7 +2,7 @@
 
 import { http, type HttpHandler, HttpResponse, type HttpResponseResolver, type RequestHandlerOptions as RequestHandlerOptions2 } from 'msw';
 
-import type { ClientOptions, CreateMeetingTypeData, CreateMeetingTypeResponses, GetHealthResponses, GetMeetingTypeResponses, ListMeetingTypesResponses, ListSlotsResponses } from './types.gen';
+import type { ClientOptions, CreateMeetingData, CreateMeetingResponses, CreateMeetingTypeData, CreateMeetingTypeResponses, GetHealthResponses, GetMeetingTypeResponses, ListMeetingTypesResponses, ListSlotsResponses } from './types.gen';
 
 export type RequestHandlerOptions = RequestHandlerOptions2 & {
     baseUrl?: ClientOptions['baseUrl'];
@@ -121,6 +121,37 @@ export function handleGetMeetingType(response?: HandleGetMeetingTypeResponse | H
     }, options);
 }
 
+export type HandleCreateMeetingResponse = {
+    body: CreateMeetingResponses[201];
+    status?: 201;
+};
+
+/**
+ * Handler for the `POST /api/meeting-types/{meetingTypeId}/meetings` operation.
+ */
+export function handleCreateMeeting(response?: HandleCreateMeetingResponse | HttpResponseResolver<{
+    meetingTypeId: string;
+}, CreateMeetingData['body']>, options?: RequestHandlerOptions): HttpHandler {
+    return http.post<{
+        meetingTypeId: string;
+    }, CreateMeetingData['body']>(`${options?.baseUrl ?? '*'}/api/meeting-types/:meetingTypeId/meetings`, info => {
+        if (typeof response === 'function') {
+            return response(info);
+        }
+        const body = response?.body;
+        if (body !== undefined) {
+            return HttpResponse.json(body, { status: response?.status ?? 201 });
+        }
+        if (options?.responseFallback === 'passthrough') {
+            return;
+        }
+        return new Response('Not Implemented', {
+            status: 501,
+            statusText: 'Not Implemented'
+        });
+    }, options);
+}
+
 export type HandleListSlotsResponse = {
     body: ListSlotsResponses[200];
     status?: 200;
@@ -170,6 +201,10 @@ export type MswHandlerFactories = {
      */
     getMeetingType: typeof handleGetMeetingType;
     /**
+     * Handler for the `POST /api/meeting-types/{meetingTypeId}/meetings` operation.
+     */
+    createMeeting: typeof handleCreateMeeting;
+    /**
      * Handler for the `GET /api/meeting-types/{meetingTypeId}/slots` operation.
      */
     listSlots: typeof handleListSlots;
@@ -194,6 +229,7 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
         listMeetingTypes: wrap(handleListMeetingTypes),
         createMeetingType: wrap(handleCreateMeetingType),
         getMeetingType: wrap(handleGetMeetingType),
+        createMeeting: wrap(handleCreateMeeting),
         listSlots: wrap(handleListSlots)
     };
     const all: CreateMswHandlersResult['all'] = (options = {}) => {
@@ -206,6 +242,7 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
         }
         const overrides = options.pick ?? {};
         return [
+            invoke(pick.createMeeting, overrides.createMeeting),
             invoke(pick.listSlots, overrides.listSlots),
             invoke(pick.getMeetingType, overrides.getMeetingType),
             invoke(pick.getHealth, overrides.getHealth),

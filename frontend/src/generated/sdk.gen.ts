@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateMeetingTypeData, CreateMeetingTypeErrors, CreateMeetingTypeResponses, GetHealthData, GetHealthResponses, GetMeetingTypeData, GetMeetingTypeErrors, GetMeetingTypeResponses, ListMeetingTypesData, ListMeetingTypesResponses, ListSlotsData, ListSlotsErrors, ListSlotsResponses } from './types.gen';
+import type { CreateMeetingData, CreateMeetingErrors, CreateMeetingResponses, CreateMeetingTypeData, CreateMeetingTypeErrors, CreateMeetingTypeResponses, GetHealthData, GetHealthResponses, GetMeetingTypeData, GetMeetingTypeErrors, GetMeetingTypeResponses, ListMeetingTypesData, ListMeetingTypesResponses, ListSlotsData, ListSlotsErrors, ListSlotsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -41,6 +41,20 @@ export const createMeetingType = <ThrowOnError extends boolean = false>(options:
  * Reads one meeting type. An id that is not a UUID fails validation with `field: meetingTypeId`.
  */
 export const getMeetingType = <ThrowOnError extends boolean = false>(options: Options<GetMeetingTypeData, ThrowOnError>): RequestResult<GetMeetingTypeResponses, GetMeetingTypeErrors, ThrowOnError> => (options.client ?? client).get<GetMeetingTypeResponses, GetMeetingTypeErrors, ThrowOnError>({ url: '/api/meeting-types/{meetingTypeId}', ...options });
+
+/**
+ * Books a meeting of the type. `start` must be one of the slots the server would list for it
+ * right now. A start that no slot has even without other meetings fails validation with
+ * `field: start`, and a start whose slot overlaps another meeting gets `conflict`.
+ */
+export const createMeeting = <ThrowOnError extends boolean = false>(options: Options<CreateMeetingData, ThrowOnError>): RequestResult<CreateMeetingResponses, CreateMeetingErrors, ThrowOnError> => (options.client ?? client).post<CreateMeetingResponses, CreateMeetingErrors, ThrowOnError>({
+    url: '/api/meeting-types/{meetingTypeId}/meetings',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Lists the slots of a meeting type for each of the 14 days of the booking window, from tomorrow.

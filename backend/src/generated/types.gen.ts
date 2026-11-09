@@ -25,6 +25,24 @@ export type Health = {
 };
 
 /**
+ * A guest's meeting with the owner. Times are Moscow time, like `2026-11-10T09:00:00+03:00`.
+ */
+export type Meeting = {
+    id: Uuid;
+    /**
+     * The whole meeting type, so a list of meetings needs no more requests.
+     */
+    meetingType: MeetingType;
+    start: string;
+    /**
+     * The start plus the duration of the meeting type.
+     */
+    end: string;
+    guestName: string;
+    guestEmail: string;
+};
+
+/**
  * A kind of meeting the owner offers to guests.
  */
 export type MeetingType = {
@@ -35,6 +53,16 @@ export type MeetingType = {
      */
     description: string;
     durationMinutes: 15 | 30 | 45 | 60 | 90 | 120;
+};
+
+/**
+ * What the guest fills in to book a meeting. `start` is compared with the slots as a moment, so
+ * any offset works. The server trims `guestName` and keeps `guestEmail` as it is.
+ */
+export type NewMeeting = {
+    start: string;
+    guestName: string;
+    guestEmail: string;
 };
 
 /**
@@ -161,6 +189,41 @@ export type GetMeetingTypeResponses = {
 };
 
 export type GetMeetingTypeResponse = GetMeetingTypeResponses[keyof GetMeetingTypeResponses];
+
+export type CreateMeetingData = {
+    body: NewMeeting;
+    path: {
+        meetingTypeId: Uuid;
+    };
+    query?: never;
+    url: '/api/meeting-types/{meetingTypeId}/meetings';
+};
+
+export type CreateMeetingErrors = {
+    /**
+     * The request breaks the contract.
+     */
+    400: ApiError;
+    /**
+     * No meeting type has the id from the path.
+     */
+    404: ApiError;
+    /**
+     * The time overlaps a meeting that already exists.
+     */
+    409: ApiError;
+};
+
+export type CreateMeetingError = CreateMeetingErrors[keyof CreateMeetingErrors];
+
+export type CreateMeetingResponses = {
+    /**
+     * The request has succeeded and a new resource has been created as a result.
+     */
+    201: Meeting;
+};
+
+export type CreateMeetingResponse = CreateMeetingResponses[keyof CreateMeetingResponses];
 
 export type ListSlotsData = {
     body?: never;
