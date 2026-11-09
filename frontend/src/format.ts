@@ -9,6 +9,9 @@ export function formatDuration(minutes: number): string {
   return `${hours} ч ${rest} мин`;
 }
 
+/** The caption next to times on the pages. */
+export const moscowTimeNote = 'время московское (UTC+3)';
+
 // Times are Moscow time in any browser: the formats fix the time zone and never use the browser's.
 const moscowTime = new Intl.DateTimeFormat('ru-RU', {
   timeZone: 'Europe/Moscow',

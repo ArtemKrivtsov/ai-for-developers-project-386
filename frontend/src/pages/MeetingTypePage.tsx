@@ -9,13 +9,12 @@ import {
   formatMeetingTime,
   formatSlot,
   formatWindow,
+  moscowTimeNote,
 } from '../format.ts';
 import type { Meeting, MeetingType, Slot, SlotDay } from '../generated/index.ts';
 import GuestForm, { type Guest } from '../GuestForm.tsx';
 import { useMeetingType } from '../useMeetingType.ts';
 import { type Slots, useSlots } from '../useSlots.ts';
-
-const moscowTimeNote = 'время московское (UTC+3)';
 
 function MeetingTypePage() {
   const { meetingTypeId = '' } = useParams();

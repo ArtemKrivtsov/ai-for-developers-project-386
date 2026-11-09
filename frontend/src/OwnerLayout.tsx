@@ -10,6 +10,7 @@ function OwnerLayout() {
           Владелец
         </Text>
         <Flex direction={{ base: 'row', sm: 'column' }} gap={4}>
+          <OwnerLink to="/owner" label="Встречи" />
           <OwnerLink to="/owner/types" label="Типы встреч" />
         </Flex>
       </Box>
