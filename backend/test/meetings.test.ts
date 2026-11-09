@@ -85,6 +85,7 @@ test.each([
   ['guestName is empty', { guestName: '' }, 'guestName'],
   ['guestName has only spaces', { guestName: '   ' }, 'guestName'],
   ['guestName is longer than 100 characters', { guestName: 'я'.repeat(101) }, 'guestName'],
+  ['guestName is a number', { guestName: 42 }, 'guestName'],
   ['guestEmail is missing', { guestEmail: undefined }, 'guestEmail'],
   ['guestEmail is not an email', { guestEmail: 'ivan.example.com' }, 'guestEmail'],
   [

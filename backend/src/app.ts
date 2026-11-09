@@ -18,7 +18,13 @@ export type AppOptions = {
 };
 
 export function buildApp({ now = () => new Date(), serveFrontend = false }: AppOptions = {}) {
-  const app = Fastify({ logger: process.env.NODE_ENV !== 'test' });
+  const app = Fastify({
+    logger: process.env.NODE_ENV !== 'test',
+    // A JSON body has types of its own: `"30"` or `null` in place of a number or a string breaks
+    // the contract instead of turning into one. Every path parameter in the contract is a string,
+    // so none needs converting either.
+    ajv: { customOptions: { coerceTypes: false } },
+  });
   const serviceHandlers = createHandlers(createCalendar({ now }));
   app.setErrorHandler(handleError);
   app.addHook('onRoute', checkEveryBody);

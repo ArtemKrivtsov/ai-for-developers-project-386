@@ -109,8 +109,11 @@ test.each([
   ['name has only spaces', { name: '   ' }, 'name'],
   ['name is longer than 100 characters', { name: 'я'.repeat(101) }, 'name'],
   ['name is missing', { name: undefined }, 'name'],
+  ['name is a number', { name: 123 }, 'name'],
   ['description is longer than 500 characters', { description: 'я'.repeat(501) }, 'description'],
+  ['description is null', { description: null }, 'description'],
   ['durationMinutes is not an offered duration', { durationMinutes: 50 }, 'durationMinutes'],
+  ['durationMinutes is a string', { durationMinutes: '30' }, 'durationMinutes'],
 ])(
   'creating a meeting type fails with a validation error when %s',
   async (_case, change, field) => {
