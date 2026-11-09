@@ -18,6 +18,7 @@ test('owner pages show a panel with the current page highlighted', async () => {
   const link = within(panel).getByRole('link', { name: 'Типы встреч' });
   expect(link).toHaveAttribute('href', '/owner/types');
   expect(link).toHaveAttribute('aria-current', 'page');
+  expect(within(panel).getByRole('link', { name: 'Встречи' })).not.toHaveAttribute('aria-current');
   await screen.findByText('Типов встреч пока нет.');
 });
 

@@ -1,7 +1,8 @@
-import { Anchor, AppShell, Container, Group } from '@mantine/core';
-import { Link, Outlet } from 'react-router';
+import { Anchor, AppShell, Button, Container, Group } from '@mantine/core';
+import { Link, Outlet, useMatch } from 'react-router';
 
 function Layout() {
+  const onOwnerPages = useMatch('/owner/*') !== null;
   return (
     <AppShell header={{ height: 60 }}>
       <AppShell.Header>
@@ -10,9 +11,19 @@ function Layout() {
             <Anchor component={Link} to="/" c="inherit" fw={700} size="lg" underline="never">
               Календарь звонков
             </Anchor>
-            <Anchor component={Link} to="/book">
-              Записаться
-            </Anchor>
+            <Group gap="xs">
+              <Button component={Link} to="/book" variant="subtle">
+                Записаться
+              </Button>
+              <Button
+                component={Link}
+                to="/owner"
+                variant={onOwnerPages ? 'light' : 'subtle'}
+                aria-current={onOwnerPages ? 'page' : undefined}
+              >
+                Владельцу
+              </Button>
+            </Group>
           </Group>
         </Container>
       </AppShell.Header>

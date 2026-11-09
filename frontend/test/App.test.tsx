@@ -26,6 +26,27 @@ test('the «Записаться» button opens the meeting type catalog', async
   ).toBeInTheDocument();
 });
 
+test('the header links to booking and to the owner pages', () => {
+  renderAt('/');
+
+  const header = screen.getByRole('banner');
+  expect(within(header).getByRole('link', { name: 'Записаться' })).toHaveAttribute('href', '/book');
+  const owner = within(header).getByRole('link', { name: 'Владельцу' });
+  expect(owner).toHaveAttribute('href', '/owner');
+  expect(owner).not.toHaveAttribute('aria-current');
+});
+
+test('the header highlights «Владельцу» on the owner pages', async () => {
+  server.use(handleListMeetingTypes({ body: [] }));
+
+  renderAt('/owner/types');
+
+  expect(
+    within(screen.getByRole('banner')).getByRole('link', { name: 'Владельцу' }),
+  ).toHaveAttribute('aria-current', 'page');
+  await screen.findByText('Типов встреч пока нет.');
+});
+
 test('an unknown address shows the not-found page with a link home', () => {
   renderAt('/no-such-page');
 

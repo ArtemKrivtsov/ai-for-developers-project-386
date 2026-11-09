@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateMeetingData, CreateMeetingErrors, CreateMeetingResponses, CreateMeetingTypeData, CreateMeetingTypeErrors, CreateMeetingTypeResponses, GetHealthData, GetHealthResponses, GetMeetingTypeData, GetMeetingTypeErrors, GetMeetingTypeResponses, ListMeetingTypesData, ListMeetingTypesResponses, ListSlotsData, ListSlotsErrors, ListSlotsResponses } from './types.gen';
+import type { CreateMeetingData, CreateMeetingErrors, CreateMeetingResponses, CreateMeetingTypeData, CreateMeetingTypeErrors, CreateMeetingTypeResponses, GetHealthData, GetHealthResponses, GetMeetingTypeData, GetMeetingTypeErrors, GetMeetingTypeResponses, ListMeetingTypesData, ListMeetingTypesResponses, ListSlotsData, ListSlotsErrors, ListSlotsResponses, ListUpcomingMeetingsData, ListUpcomingMeetingsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -60,3 +60,9 @@ export const createMeeting = <ThrowOnError extends boolean = false>(options: Opt
  * Lists the slots of a meeting type for each of the 14 days of the booking window, from tomorrow.
  */
 export const listSlots = <ThrowOnError extends boolean = false>(options: Options<ListSlotsData, ThrowOnError>): RequestResult<ListSlotsResponses, ListSlotsErrors, ThrowOnError> => (options.client ?? client).get<ListSlotsResponses, ListSlotsErrors, ThrowOnError>({ url: '/api/meeting-types/{meetingTypeId}/slots', ...options });
+
+/**
+ * Lists upcoming meetings of every meeting type, nearest first. A meeting is upcoming until
+ * it ends, so one that is going on now is in the list.
+ */
+export const listUpcomingMeetings = <ThrowOnError extends boolean = false>(options?: Options<ListUpcomingMeetingsData, ThrowOnError>): RequestResult<ListUpcomingMeetingsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListUpcomingMeetingsResponses, unknown, ThrowOnError>({ url: '/api/meetings', ...options });

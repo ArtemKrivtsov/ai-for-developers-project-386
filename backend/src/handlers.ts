@@ -41,6 +41,10 @@ export function createHandlers(calendar: Calendar): RouteHandlers {
           return reply.code(409).send(conflict);
       }
     },
+
+    async listUpcomingMeetings(_request, reply) {
+      return reply.code(200).send(calendar.listUpcomingMeetings());
+    },
   };
 }
 

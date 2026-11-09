@@ -156,6 +156,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
+  /api/meetings:
+    get:
+      operationId: listUpcomingMeetings
+      description: |-
+        Lists upcoming meetings of every meeting type, nearest first. A meeting is upcoming until
+        it ends, so one that is going on now is in the list.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Meeting'
 components:
   schemas:
     ApiError:

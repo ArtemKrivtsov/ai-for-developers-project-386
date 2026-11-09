@@ -2,7 +2,7 @@
 
 import { http, type HttpHandler, HttpResponse, type HttpResponseResolver, type RequestHandlerOptions as RequestHandlerOptions2 } from 'msw';
 
-import type { ClientOptions, CreateMeetingData, CreateMeetingResponses, CreateMeetingTypeData, CreateMeetingTypeResponses, GetHealthResponses, GetMeetingTypeResponses, ListMeetingTypesResponses, ListSlotsResponses } from './types.gen';
+import type { ClientOptions, CreateMeetingData, CreateMeetingResponses, CreateMeetingTypeData, CreateMeetingTypeResponses, GetHealthResponses, GetMeetingTypeResponses, ListMeetingTypesResponses, ListSlotsResponses, ListUpcomingMeetingsResponses } from './types.gen';
 
 export type RequestHandlerOptions = RequestHandlerOptions2 & {
     baseUrl?: ClientOptions['baseUrl'];
@@ -183,6 +183,33 @@ export function handleListSlots(response?: HandleListSlotsResponse | HttpRespons
     }, options);
 }
 
+export type HandleListUpcomingMeetingsResponse = {
+    body: ListUpcomingMeetingsResponses[200];
+    status?: 200;
+};
+
+/**
+ * Handler for the `GET /api/meetings` operation.
+ */
+export function handleListUpcomingMeetings(response?: HandleListUpcomingMeetingsResponse | HttpResponseResolver<never, never>, options?: RequestHandlerOptions): HttpHandler {
+    return http.get<never, never>(`${options?.baseUrl ?? '*'}/api/meetings`, info => {
+        if (typeof response === 'function') {
+            return response(info);
+        }
+        const body = response?.body;
+        if (body !== undefined) {
+            return HttpResponse.json(body, { status: response?.status ?? 200 });
+        }
+        if (options?.responseFallback === 'passthrough') {
+            return;
+        }
+        return new Response('Not Implemented', {
+            status: 501,
+            statusText: 'Not Implemented'
+        });
+    }, options);
+}
+
 export type MswHandlerFactories = {
     /**
      * Handler for the `GET /api/health` operation.
@@ -208,6 +235,10 @@ export type MswHandlerFactories = {
      * Handler for the `GET /api/meeting-types/{meetingTypeId}/slots` operation.
      */
     listSlots: typeof handleListSlots;
+    /**
+     * Handler for the `GET /api/meetings` operation.
+     */
+    listUpcomingMeetings: typeof handleListUpcomingMeetings;
 };
 
 export type CreateMswHandlersResult = {
@@ -230,7 +261,8 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
         createMeetingType: wrap(handleCreateMeetingType),
         getMeetingType: wrap(handleGetMeetingType),
         createMeeting: wrap(handleCreateMeeting),
-        listSlots: wrap(handleListSlots)
+        listSlots: wrap(handleListSlots),
+        listUpcomingMeetings: wrap(handleListUpcomingMeetings)
     };
     const all: CreateMswHandlersResult['all'] = (options = {}) => {
         type OverrideValue<R> = R | [
@@ -247,7 +279,8 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
             invoke(pick.getMeetingType, overrides.getMeetingType),
             invoke(pick.getHealth, overrides.getHealth),
             invoke(pick.listMeetingTypes, overrides.listMeetingTypes),
-            invoke(pick.createMeetingType, overrides.createMeetingType)
+            invoke(pick.createMeetingType, overrides.createMeetingType),
+            invoke(pick.listUpcomingMeetings, overrides.listUpcomingMeetings)
         ];
     };
     return { all, pick };
