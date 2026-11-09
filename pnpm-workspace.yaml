@@ -1,0 +1,4 @@
+packages:
+  - spec
+  - backend
+  - frontend

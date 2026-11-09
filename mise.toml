@@ -1,0 +1,47 @@
+min_version = "2026.11.5"
+
+[settings]
+experimental = true
+
+[tools]
+node = "26.13.0"
+pnpm = "12.18.0"
+hk = "2.11.1"
+jactionlint = "2.5.0"
+pitchfork = "2.33.1"
+oxlint = "1.92.0"
+oxfmt = "0.77.0"
+shellcheck = "0.11.0"
+
+[tasks.setup]
+description = "Install dependencies and git hooks"
+run = ["pnpm install --frozen-lockfile", "hk install --mise"]
+
+[tasks.generate]
+description = "Compile the TypeSpec contract to OpenAPI, regenerate server types and the frontend SDK"
+run = ["pnpm --dir spec build", "pnpm --dir backend generate", "pnpm --dir frontend generate"]
+
+[tasks.lint]
+description = "Run linters and the formatter check"
+run = "hk check --all -S oxlint -S oxfmt -S jactionlint"
+
+[tasks.test]
+description = "Run tests"
+run = "pnpm -r test"
+
+[tasks.check]
+description = "Run every check, the same set CI runs"
+run = "hk check --all"
+
+[tasks.fix]
+description = "Apply the automatic fixes"
+run = "hk fix --all"
+
+[daemons.backend]
+run = "exec pnpm --dir backend dev"
+ready_port = 3000
+
+[daemons.frontend]
+run = "exec pnpm --dir frontend dev"
+ready_port = 5173
+depends = ["backend"]
