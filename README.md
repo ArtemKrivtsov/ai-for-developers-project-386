@@ -66,6 +66,29 @@ mise daemons stop
 mise run check       # все проверки, те же, что в CI
 ```
 
+## Деплой
+
+Приложение опубликовано на Render: https://ai-for-developers-project-386-cehm.onrender.com
+
+Render собирает образ по `Dockerfile` из ветки `main` и передаёт порт в переменной `PORT`.
+
+Типы встреч и встречи хранятся в памяти сервера и пропадают при каждом перезапуске: после деплоя, рестарта и засыпания сервиса. Бесплатный сервис Render засыпает после 15 минут без запросов. Первый запрос после этого ждёт запуска около минуты, и в календаре остаются только два стартовых типа встреч.
+
+### MCP-сервер Render
+
+Выкатом управляет агент через [MCP-сервер Render](https://render.com/docs/mcp-server). Для Claude Code сервер описан в `.mcp.json`, API-ключ берётся из переменной окружения `RENDER_API_KEY`.
+
+1. Создайте API-ключ в Render: [Account Settings → API Keys](https://dashboard.render.com/u/settings?add-api-key).
+2. Сохраните его в `.env.local` строкой `RENDER_API_KEY=<ключ>`. Файл в `.gitignore`, в репозиторий ключ не попадёт.
+3. Запустите агента с этой переменной:
+
+   ```bash
+   set -a; . ./.env.local; set +a
+   claude
+   ```
+
+4. При первом запуске подтвердите сервер `render` из `.mcp.json`. В `claude mcp list` у него должно стоять `Connected`.
+
 ---
 
 <details>
